@@ -1,0 +1,292 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\BusinessSetting;
+use App\Models\LandingFaq;
+use App\Models\LandingGallery;
+use App\Models\LandingInquiry;
+use App\Models\LandingService;
+use App\Models\LandingStatistic;
+use App\Models\LandingTestimonial;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
+
+class LandingPageAdminController extends Controller
+{
+    /**
+     * Show Landing Page Management Dashboard
+     */
+    public function index(): View
+    {
+        $settings = BusinessSetting::pluck('value', 'key')->all();
+        $services = LandingService::orderBy('order')->get();
+        $galleries = LandingGallery::orderBy('order')->get();
+        $testimonials = LandingTestimonial::orderBy('order')->get();
+        $faqs = LandingFaq::orderBy('order')->get();
+        $statistics = LandingStatistic::orderBy('order')->get();
+        $inquiries = LandingInquiry::latest()->take(50)->get();
+
+        return view('landing_admin.index', compact(
+            'settings',
+            'services',
+            'galleries',
+            'testimonials',
+            'faqs',
+            'statistics',
+            'inquiries'
+        ));
+    }
+
+    /**
+     * Update Identity, Contact, Maps & SEO Settings
+     */
+    public function updateSettings(Request $request): RedirectResponse
+    {
+        $fields = [
+            'landing_whatsapp_number',
+            'landing_whatsapp_message',
+            'landing_email',
+            'landing_operating_hours',
+            'landing_maps_url',
+            'landing_maps_embed_url',
+            'landing_maps_latitude',
+            'landing_maps_longitude',
+            'landing_social_facebook',
+            'landing_social_instagram',
+            'landing_social_tiktok',
+            'landing_social_youtube',
+            'landing_seo_meta_title',
+            'landing_seo_meta_description',
+            'landing_seo_keywords',
+        ];
+
+        foreach ($fields as $field) {
+            if ($request->has($field)) {
+                BusinessSetting::set($field, $request->input($field), 'landing_page');
+            }
+        }
+
+        return redirect()->route('landing-admin.index', ['tab' => 'settings'])
+            ->with('success', 'Pengaturan Profil, Kontak, Maps, dan SEO berhasil disimpan.');
+    }
+
+    /**
+     * Update Hero & About Sections
+     */
+    public function updateHeroAbout(Request $request): RedirectResponse
+    {
+        $fields = [
+            'landing_hero_badge',
+            'landing_hero_headline',
+            'landing_hero_subheadline',
+            'landing_hero_cta_primary',
+            'landing_hero_cta_secondary',
+            'landing_about_title',
+            'landing_about_description',
+            'landing_about_vision',
+            'landing_about_mission',
+            'landing_about_years_experience',
+        ];
+
+        foreach ($fields as $field) {
+            if ($request->has($field)) {
+                BusinessSetting::set($field, $request->input($field), 'landing_page');
+            }
+        }
+
+        return redirect()->route('landing-admin.index', ['tab' => 'hero-about'])
+            ->with('success', 'Konten Hero dan Tentang Kami berhasil diperbarui.');
+    }
+
+    /**
+     * Store new Service
+     */
+    public function storeService(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:150',
+            'icon' => 'required|string|max:50',
+            'short_description' => 'required|string|max:500',
+            'full_description' => 'nullable|string|max:2000',
+            'order' => 'nullable|integer',
+        ]);
+
+        $validated['slug'] = Str::slug($validated['title']) . '-' . time();
+        $validated['order'] = $validated['order'] ?? (LandingService::max('order') + 1);
+        $validated['is_active'] = $request->has('is_active');
+
+        LandingService::create($validated);
+
+        return redirect()->route('landing-admin.index', ['tab' => 'services'])
+            ->with('success', 'Layanan baru berhasil ditambahkan.');
+    }
+
+    /**
+     * Delete Service
+     */
+    public function destroyService(LandingService $service): RedirectResponse
+    {
+        $service->delete();
+        return redirect()->route('landing-admin.index', ['tab' => 'services'])
+            ->with('success', 'Layanan berhasil dihapus.');
+    }
+
+    /**
+     * Store Gallery Photo (URL or File Upload)
+     */
+    public function storeGallery(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'title' => 'required|string|max:150',
+            'category' => 'required|string|max:50',
+            'caption' => 'nullable|string|max:300',
+            'image_file' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:3072',
+            'image_url' => 'nullable|url|max:500',
+            'order' => 'nullable|integer',
+        ]);
+
+        $imagePath = $request->input('image_url');
+
+        if ($request->hasFile('image_file')) {
+            $file = $request->file('image_file');
+            $filename = 'gallery_' . time() . '_' . Str::random(5) . '.' . ($file->getClientOriginalExtension() ?: 'jpg');
+            $destination = public_path('uploads/gallery');
+            if (!file_exists($destination)) {
+                @mkdir($destination, 0775, true);
+            }
+            $file->move($destination, $filename);
+            $imagePath = 'uploads/gallery/' . $filename;
+        }
+
+        if (empty($imagePath)) {
+            return back()->with('error', 'Silakan upload file foto atau masukkan tautan URL gambar.');
+        }
+
+        LandingGallery::create([
+            'title' => $request->input('title'),
+            'category' => $request->input('category'),
+            'image_path' => $imagePath,
+            'caption' => $request->input('caption'),
+            'order' => $request->input('order', LandingGallery::max('order') + 1),
+            'is_active' => true,
+        ]);
+
+        return redirect()->route('landing-admin.index', ['tab' => 'gallery'])
+            ->with('success', 'Foto galeri berhasil ditambahkan.');
+    }
+
+    /**
+     * Delete Gallery Photo
+     */
+    public function destroyGallery(LandingGallery $gallery): RedirectResponse
+    {
+        if (!str_starts_with($gallery->image_path, 'http') && file_exists(public_path($gallery->image_path))) {
+            @unlink(public_path($gallery->image_path));
+        }
+        $gallery->delete();
+
+        return redirect()->route('landing-admin.index', ['tab' => 'gallery'])
+            ->with('success', 'Foto galeri berhasil dihapus.');
+    }
+
+    /**
+     * Store Testimonial
+     */
+    public function storeTestimonial(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'client_name' => 'required|string|max:150',
+            'client_role' => 'required|string|max:100',
+            'rating' => 'required|integer|min:1|max:5',
+            'content' => 'required|string|max:1000',
+            'avatar_url' => 'nullable|url|max:500',
+            'order' => 'nullable|integer',
+        ]);
+
+        $validated['order'] = $validated['order'] ?? (LandingTestimonial::max('order') + 1);
+        $validated['is_active'] = true;
+
+        LandingTestimonial::create($validated);
+
+        return redirect()->route('landing-admin.index', ['tab' => 'testimonials'])
+            ->with('success', 'Testimoni berhasil ditambahkan.');
+    }
+
+    /**
+     * Delete Testimonial
+     */
+    public function destroyTestimonial(LandingTestimonial $testimonial): RedirectResponse
+    {
+        $testimonial->delete();
+        return redirect()->route('landing-admin.index', ['tab' => 'testimonials'])
+            ->with('success', 'Testimoni berhasil dihapus.');
+    }
+
+    /**
+     * Store FAQ
+     */
+    public function storeFaq(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'question' => 'required|string|max:255',
+            'answer' => 'required|string|max:2000',
+            'category' => 'nullable|string|max:50',
+            'order' => 'nullable|integer',
+        ]);
+
+        $validated['order'] = $validated['order'] ?? (LandingFaq::max('order') + 1);
+        $validated['is_active'] = true;
+
+        LandingFaq::create($validated);
+
+        return redirect()->route('landing-admin.index', ['tab' => 'faqs'])
+            ->with('success', 'Tanya Jawab (FAQ) berhasil ditambahkan.');
+    }
+
+    /**
+     * Delete FAQ
+     */
+    public function destroyFaq(LandingFaq $faq): RedirectResponse
+    {
+        $faq->delete();
+        return redirect()->route('landing-admin.index', ['tab' => 'faqs'])
+            ->with('success', 'FAQ berhasil dihapus.');
+    }
+
+    /**
+     * Store Statistic
+     */
+    public function storeStatistic(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'label' => 'required|string|max:100',
+            'value' => 'required|string|max:50',
+            'prefix' => 'nullable|string|max:10',
+            'suffix' => 'nullable|string|max:10',
+            'icon' => 'nullable|string|max:50',
+            'order' => 'nullable|integer',
+        ]);
+
+        $validated['order'] = $validated['order'] ?? (LandingStatistic::max('order') + 1);
+        $validated['is_active'] = true;
+
+        LandingStatistic::create($validated);
+
+        return redirect()->route('landing-admin.index', ['tab' => 'statistics'])
+            ->with('success', 'Statistik berhasil ditambahkan.');
+    }
+
+    /**
+     * Delete Statistic
+     */
+    public function destroyStatistic(LandingStatistic $statistic): RedirectResponse
+    {
+        $statistic->delete();
+        return redirect()->route('landing-admin.index', ['tab' => 'statistics'])
+            ->with('success', 'Statistik berhasil dihapus.');
+    }
+}
+
