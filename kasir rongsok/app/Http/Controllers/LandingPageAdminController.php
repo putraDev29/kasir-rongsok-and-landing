@@ -46,6 +46,8 @@ class LandingPageAdminController extends Controller
     public function updateSettings(Request $request): RedirectResponse
     {
         $fields = [
+            'company_name',
+            'company_tagline',
             'landing_whatsapp_number',
             'landing_whatsapp_message',
             'landing_email',
@@ -65,12 +67,54 @@ class LandingPageAdminController extends Controller
 
         foreach ($fields as $field) {
             if ($request->has($field)) {
-                BusinessSetting::set($field, $request->input($field), 'landing_page');
+                $category = in_array($field, ['company_name', 'company_tagline']) ? 'branding' : 'landing_page';
+                BusinessSetting::set($field, $request->input($field), $category);
             }
         }
 
+        // Handle Header Logo / Icon Upload
+        $this->handleHeaderLogoUpload($request);
+
         return redirect()->route('landing-admin.index', ['tab' => 'settings'])
-            ->with('success', 'Pengaturan Profil, Kontak, Maps, dan SEO berhasil disimpan.');
+            ->with('success', 'Logo & ikon header, identitas usaha, kontak, dan SEO berhasil disimpan.');
+    }
+
+    /**
+     * Process Header Logo / Icon upload or URL update
+     */
+    protected function handleHeaderLogoUpload(Request $request): void
+    {
+        $destination = public_path('uploads/logo');
+        if (!file_exists($destination)) {
+            @mkdir($destination, 0775, true);
+        }
+
+        if ($request->hasFile('header_logo_file')) {
+            $file = $request->file('header_logo_file');
+            $ext = $file->getClientOriginalExtension() ?: 'png';
+            $filename = 'logo_' . time() . '.' . $ext;
+            $file->move($destination, $filename);
+
+            $relativeLogo = 'uploads/logo/' . $filename;
+            BusinessSetting::set('app_logo', $relativeLogo, 'branding');
+            BusinessSetting::set('landing_header_logo', $relativeLogo, 'branding');
+            BusinessSetting::set('logo_url', asset($relativeLogo), 'landing_page');
+
+            // Mirror to landing-page/public for instant favicon & icon reflection
+            $landingPageIconPath = base_path('../landing-page/public/icon.png');
+            $landingPageLogoPath = base_path('../landing-page/public/logo.png');
+            @copy($destination . '/' . $filename, $landingPageIconPath);
+            @copy($destination . '/' . $filename, $landingPageLogoPath);
+        } elseif ($request->filled('header_logo_url')) {
+            $logoUrl = $request->input('header_logo_url');
+            BusinessSetting::set('app_logo', $logoUrl, 'branding');
+            BusinessSetting::set('landing_header_logo', $logoUrl, 'branding');
+            BusinessSetting::set('logo_url', $logoUrl, 'landing_page');
+        } elseif ($request->boolean('remove_header_logo')) {
+            BusinessSetting::set('app_logo', null, 'branding');
+            BusinessSetting::set('landing_header_logo', null, 'branding');
+            BusinessSetting::set('logo_url', null, 'landing_page');
+        }
     }
 
     /**

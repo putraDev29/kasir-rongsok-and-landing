@@ -383,8 +383,12 @@ class LandingPageApiController extends Controller
         $waMessage = BusinessSetting::get('landing_whatsapp_message', 'Halo Admin, saya ingin bertanya mengenai penjualan rongsok. Bisa dibantu informasi harga dan penjemputannya?');
         $waUrl = "https://wa.me/{$waClean}?text=" . rawurlencode($waMessage);
 
-        $logoPath = BusinessSetting::get('app_logo');
-        $logoUrl = $logoPath ? asset($logoPath) : asset('icon-default.svg');
+        $logoPath = BusinessSetting::get('landing_header_logo') ?: BusinessSetting::get('app_logo');
+        if ($logoPath) {
+            $logoUrl = str_starts_with($logoPath, 'http') ? $logoPath : asset($logoPath);
+        } else {
+            $logoUrl = asset('icon-default.svg');
+        }
 
         return [
             'app_name' => $appName,

@@ -45,9 +45,13 @@ class BusinessSetting extends Model
      */
     public static function hasLogo(): bool
     {
-        $logo = static::get('app_logo');
+        $logo = static::get('landing_header_logo') ?: static::get('app_logo');
         if (empty($logo)) {
             return false;
+        }
+
+        if (str_starts_with($logo, 'http://') || str_starts_with($logo, 'https://')) {
+            return true;
         }
 
         return file_exists(public_path($logo))
@@ -60,9 +64,13 @@ class BusinessSetting extends Model
      */
     public static function logoUrl(): ?string
     {
-        $logo = static::get('app_logo');
+        $logo = static::get('landing_header_logo') ?: static::get('app_logo');
         if (empty($logo)) {
             return null;
+        }
+
+        if (str_starts_with($logo, 'http://') || str_starts_with($logo, 'https://')) {
+            return $logo;
         }
 
         return static::hasLogo() ? asset($logo) : null;

@@ -77,6 +77,20 @@
         height: 100%;
         object-fit: cover;
     }
+    .logo-upload-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        width: 100%;
+    }
+    @media (min-width: 768px) {
+        .logo-upload-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            align-items: start;
+            gap: 1.5rem;
+        }
+    }
     /* Polyfill missing Tailwind classes */
     .md\:col-span-2 { grid-column: span 2 / span 2; }
     .w-fit { width: fit-content; }
@@ -141,7 +155,7 @@
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-2 flex flex-wrap gap-1.5 text-xs font-semibold">
         <button type="button" @click="activeTab = 'settings'; history.replaceState(null, '', '?tab=settings')" :class="activeTab === 'settings' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
             <i data-lucide="sliders" class="w-4 h-4"></i>
-            <span>Kontak, Maps & SEO</span>
+            <span>Logo, Kontak & SEO</span>
         </button>
 
         <button type="button" @click="activeTab = 'hero-about'; history.replaceState(null, '', '?tab=hero-about')" :class="activeTab === 'hero-about' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
@@ -180,15 +194,92 @@
         </button>
     </div>
 
-    <!-- TAB 1: KONTAK, MAPS & SEO -->
+    <!-- TAB 1: LOGO, KONTAK, MAPS & SEO -->
     <div x-show="activeTab === 'settings'" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
         <div class="border-b border-slate-200 pb-4">
-            <h3 class="text-base font-bold text-slate-900">Pengaturan WhatsApp, Google Maps, Operasional & SEO</h3>
-            <p class="text-xs text-slate-500 mt-1">Data ini langsung disinkronkan ke Floating Button WhatsApp, Section Kontak, Footer, dan Meta Header Website</p>
+            <h3 class="text-base font-bold text-slate-900">Pengaturan Logo Header, Identitas Usaha, Kontak & SEO</h3>
+            <p class="text-xs text-slate-500 mt-1">Kelola logo/ikon header website, nama perusahaan, nomor WhatsApp, alamat Maps, jam operasional, dan SEO</p>
         </div>
 
-        <form action="{{ route('landing-admin.settings.update') }}" method="POST" class="space-y-6">
+        <form action="{{ route('landing-admin.settings.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
             @csrf
+
+            <!-- Section Identitas & Logo / Ikon Header Website -->
+            <div class="bg-slate-50 p-5 sm:p-6 rounded-xl border border-slate-200 space-y-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-2">
+                        <i data-lucide="shield" class="w-4 h-4 text-emerald-600"></i>
+                        <span>Logo & Ikon Header Website (Navigasi & Favicon)</span>
+                    </h4>
+                    <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 rounded-full w-fit">
+                        Tampil di Navigasi Header, Footer & Tab Browser
+                    </span>
+                </div>
+
+                <div class="logo-upload-layout">
+                    <!-- Preview Logo Kiri -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-semibold text-slate-700 uppercase">Pratinjau Logo Saat Ini</label>
+                        <div class="w-full h-36 rounded-xl bg-white border border-slate-300 shadow-sm flex items-center justify-center p-3 relative overflow-hidden group">
+                            @php
+                                $currentLogo = !empty($settings['landing_header_logo']) 
+                                    ? $settings['landing_header_logo'] 
+                                    : (!empty($settings['app_logo']) ? $settings['app_logo'] : null);
+                                $currentLogoUrl = $currentLogo 
+                                    ? (str_starts_with($currentLogo, 'http') ? $currentLogo : asset($currentLogo)) 
+                                    : asset('icon-default.svg');
+                            @endphp
+                            <img id="preview-header-logo" 
+                                 src="{{ $currentLogoUrl }}" 
+                                 alt="Logo Header" 
+                                 class="max-h-24 max-w-full object-contain transition group-hover:scale-105">
+                        </div>
+                        <span class="text-[11px] text-slate-400 block text-center">Format PNG / JPG / SVG transparan direkomendasikan.</span>
+                    </div>
+
+                    <!-- Input Upload & Teks Kanan -->
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Nama Perusahaan / Usaha *</label>
+                                <input type="text" name="company_name" 
+                                       value="{{ old('company_name', $settings['company_name'] ?? 'PT. Seberaya Akses Multi') }}" required
+                                       class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 font-bold text-slate-900 bg-white">
+                                <span class="text-[11px] text-slate-400">Nama brand di samping icon/logo pada navigasi header.</span>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Tagline Singkat Header</label>
+                                <input type="text" name="company_tagline" 
+                                       value="{{ old('company_tagline', $settings['company_tagline'] ?? 'Seberaya Logam • Scrap & Rongsok') }}"
+                                       class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 font-semibold text-slate-700 bg-white">
+                                <span class="text-[11px] text-slate-400">Teks kecil di bawah nama perusahaan pada header & footer.</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Unggah Berkas File Logo / Ikon Baru (Laptop/PC)</label>
+                            <input type="file" name="header_logo_file" accept="image/*"
+                                   onchange="previewHeroImage(this, 'preview-header-logo')"
+                                   class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 border border-slate-300 rounded-lg p-1 bg-white cursor-pointer">
+                            <span class="text-[11px] text-slate-400">Pilih berkas logo usaha Anda (format PNG, JPG, WEBP, SVG maks 2MB).</span>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Atau Gunakan Tautan URL Gambar Logo</label>
+                            <input type="text" name="header_logo_url" 
+                                   oninput="previewHeroUrl(this.value, 'preview-header-logo')"
+                                   value="{{ old('header_logo_url', !empty($settings['landing_header_logo']) && str_starts_with($settings['landing_header_logo'], 'http') ? $settings['landing_header_logo'] : '') }}"
+                                   placeholder="https://..." class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 bg-white">
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-1">
+                            <input type="checkbox" name="remove_header_logo" value="1" id="remove_header_logo" class="rounded text-rose-600 border-slate-300">
+                            <label for="remove_header_logo" class="text-xs text-rose-600 font-medium">Reset & hapus logo kustom (Gunakan icon default)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Section WhatsApp & Kontak -->
             <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">

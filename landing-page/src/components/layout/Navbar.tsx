@@ -81,7 +81,7 @@ export default function Navbar({ settings }: NavbarProps) {
                   {settings.company_name}
                 </span>
                 <span className="text-[10px] text-sky-600 font-bold tracking-wider uppercase -mt-0.5">
-                  Seberaya Logam • Scrap & Rongsok
+                  {settings.company_tagline || "Seberaya Logam • Scrap & Rongsok"}
                 </span>
               </div>
             </a>
