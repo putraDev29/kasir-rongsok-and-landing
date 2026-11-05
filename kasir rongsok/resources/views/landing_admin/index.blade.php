@@ -1,5 +1,88 @@
 @extends('layouts.app', ['header' => 'Pengelolaan Landing Page Website'])
 
+@push('styles')
+<style>
+    /* Scope styles for Bento Hero showcase in landing admin */
+    .hero-bento-card {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.875rem;
+        padding: 1.25rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+    .hero-main-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        width: 100%;
+    }
+    @media (min-width: 768px) {
+        .hero-main-layout {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            align-items: start;
+            gap: 1.5rem;
+        }
+    }
+    .hero-preview-box-main {
+        width: 100%;
+        height: 220px;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        background-color: #0f172a;
+        border: 1px solid #cbd5e1;
+        position: relative;
+    }
+    .hero-preview-box-main img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .hero-sub-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+        width: 100%;
+    }
+    @media (min-width: 768px) {
+        .hero-sub-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1.25rem;
+        }
+    }
+    .hero-sub-card {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.875rem;
+        padding: 1.1rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 0.875rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .hero-preview-box-sub {
+        width: 100%;
+        height: 140px;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        background-color: #0f172a;
+        border: 1px solid #cbd5e1;
+        position: relative;
+    }
+    .hero-preview-box-sub img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    /* Polyfill missing Tailwind classes */
+    .md\:col-span-2 { grid-column: span 2 / span 2; }
+    .w-fit { width: fit-content; }
+</style>
+@endpush
+
 @section('content')
 <div class="max-w-7xl mx-auto space-y-6" x-data="{ activeTab: '{{ request('tab', 'settings') }}' }">
 
@@ -56,42 +139,42 @@
 
     <!-- Navigation Tabs -->
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-2 flex flex-wrap gap-1.5 text-xs font-semibold">
-        <button type="button" @click="activeTab = 'settings'" :class="activeTab === 'settings' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
+        <button type="button" @click="activeTab = 'settings'; history.replaceState(null, '', '?tab=settings')" :class="activeTab === 'settings' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
             <i data-lucide="sliders" class="w-4 h-4"></i>
             <span>Kontak, Maps & SEO</span>
         </button>
 
-        <button type="button" @click="activeTab = 'hero-about'" :class="activeTab === 'hero-about' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
+        <button type="button" @click="activeTab = 'hero-about'; history.replaceState(null, '', '?tab=hero-about')" :class="activeTab === 'hero-about' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
             <i data-lucide="layout" class="w-4 h-4"></i>
             <span>Hero & Tentang Kami</span>
         </button>
 
-        <button type="button" @click="activeTab = 'services'" :class="activeTab === 'services' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
+        <button type="button" @click="activeTab = 'services'; history.replaceState(null, '', '?tab=services')" :class="activeTab === 'services' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
             <i data-lucide="briefcase" class="w-4 h-4"></i>
             <span>Layanan ({{ $services->count() }})</span>
         </button>
 
-        <button type="button" @click="activeTab = 'gallery'" :class="activeTab === 'gallery' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
+        <button type="button" @click="activeTab = 'gallery'; history.replaceState(null, '', '?tab=gallery')" :class="activeTab === 'gallery' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
             <i data-lucide="image" class="w-4 h-4"></i>
             <span>Galeri Foto ({{ $galleries->count() }})</span>
         </button>
 
-        <button type="button" @click="activeTab = 'testimonials'" :class="activeTab === 'testimonials' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
+        <button type="button" @click="activeTab = 'testimonials'; history.replaceState(null, '', '?tab=testimonials')" :class="activeTab === 'testimonials' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
             <i data-lucide="message-square" class="w-4 h-4"></i>
             <span>Testimoni ({{ $testimonials->count() }})</span>
         </button>
 
-        <button type="button" @click="activeTab = 'faqs'" :class="activeTab === 'faqs' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
+        <button type="button" @click="activeTab = 'faqs'; history.replaceState(null, '', '?tab=faqs')" :class="activeTab === 'faqs' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
             <i data-lucide="help-circle" class="w-4 h-4"></i>
             <span>FAQ ({{ $faqs->count() }})</span>
         </button>
 
-        <button type="button" @click="activeTab = 'statistics'" :class="activeTab === 'statistics' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
+        <button type="button" @click="activeTab = 'statistics'; history.replaceState(null, '', '?tab=statistics')" :class="activeTab === 'statistics' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
             <i data-lucide="trending-up" class="w-4 h-4"></i>
             <span>Statistik ({{ $statistics->count() }})</span>
         </button>
 
-        <button type="button" @click="activeTab = 'inquiries'" :class="activeTab === 'inquiries' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
+        <button type="button" @click="activeTab = 'inquiries'; history.replaceState(null, '', '?tab=inquiries')" :class="activeTab === 'inquiries' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
             <i data-lucide="inbox" class="w-4 h-4"></i>
             <span>Kotak Masuk ({{ $inquiries->count() }})</span>
         </button>
@@ -294,126 +377,220 @@
             </div>
 
             <!-- Hero Visual Showcase Images (Bento Grid) -->
-            <div class="bg-sky-50/70 p-5 rounded-xl border border-sky-200 space-y-5">
-                <div class="flex items-center justify-between border-b border-sky-200/80 pb-3">
-                    <h4 class="text-xs font-bold uppercase tracking-wider text-sky-900 flex items-center gap-2">
-                        <i data-lucide="image" class="w-4 h-4 text-sky-600"></i>
-                        <span>Galeri Foto Hero Halaman Utama (Bento Showcase 4 Foto)</span>
-                    </h4>
-                    <span class="text-[11px] text-sky-700 bg-sky-100 px-2.5 py-0.5 rounded-full font-medium">Bisa Upload File atau Input URL</span>
+            <div class="bg-slate-50 p-6 sm:p-7 rounded-2xl border border-slate-200 space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-4">
+                    <div>
+                        <h4 class="text-sm font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                            <i data-lucide="image" class="w-4 h-4 text-emerald-600"></i>
+                            <span>Kelola Foto Hero Halaman Utama (Bento Showcase 4 Foto)</span>
+                        </h4>
+                        <p class="text-xs text-slate-500 mt-1">
+                            Atur 1 Foto Utama dan 3 Foto Cuplikan yang tampil di halaman depan website. Anda dapat mengunggah file foto atau memasukkan URL gambar.
+                        </p>
+                    </div>
+                    <span class="text-xs font-semibold text-emerald-700 bg-emerald-100 border border-emerald-200 px-3 py-1 rounded-full w-fit">
+                        Upload File atau Tautan URL
+                    </span>
                 </div>
-                <p class="text-xs text-slate-600">
-                    Foto-foto di bawah ini akan tampil langsung di halaman utama (Hero Section) landing page secara proporsional di HP maupun Desktop. Anda dapat mengunggah file foto atau memasukkan URL gambar.
-                </p>
 
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                    <!-- 1. FOTO UTAMA (BESAR) - 7 Columns on LG -->
-                    <div class="lg:col-span-7 bg-white p-4 rounded-xl border border-sky-200 shadow-xs space-y-3">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                                <span class="w-2 h-2 rounded-full bg-sky-500"></span>
-                                <span>1. Foto Utama Depo (Tampilan Utama Besar)</span>
-                            </span>
-                            <span class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-bold">24 Jam Badge</span>
+                <!-- 1. FOTO UTAMA DEPO (KARTU BESAR DI ATAS) -->
+                <div class="hero-bento-card space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-black">1</span>
+                            <span class="text-xs font-bold uppercase text-slate-900">Foto Utama Depo (Tampilan Utama Besar)</span>
                         </div>
+                        <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                            Badge 24 Jam Aktif
+                        </span>
+                    </div>
 
-                        <!-- Preview & Current Image -->
-                        <div class="relative h-44 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
-                            <img src="{{ !empty($settings['landing_hero_main_image']) ? (str_starts_with($settings['landing_hero_main_image'], 'http') ? $settings['landing_hero_main_image'] : asset($settings['landing_hero_main_image'])) : 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format&fit=crop' }}"
-                                 alt="Foto Utama Depo" class="w-full h-full object-cover">
-                        </div>
-
+                    <div class="hero-main-layout">
+                        <!-- Preview Kiri -->
                         <div class="space-y-2">
+                            <label class="block text-xs font-semibold text-slate-700 uppercase">Pratinjau Foto Utama Saat Ini</label>
+                            <div class="hero-preview-box-main shadow-inner">
+                                <img id="preview-hero-main"
+                                     src="{{ !empty($settings['landing_hero_main_image']) ? (str_starts_with($settings['landing_hero_main_image'], 'http') ? $settings['landing_hero_main_image'] : asset($settings['landing_hero_main_image'])) : 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format&fit=crop' }}"
+                                     alt="Foto Utama Depo">
+                            </div>
+                            <span class="text-[11px] text-slate-400 block">Rekomendasi rasio foto horizontal (landscape / 16:9).</span>
+                        </div>
+
+                        <!-- Input Kanan -->
+                        <div class="space-y-3.5">
                             <div>
-                                <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Unggah File Foto Baru</label>
+                                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Unggah File Foto Baru</label>
                                 <input type="file" name="landing_hero_main_image_file" accept="image/*"
-                                       class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sky-100 file:text-sky-800 hover:file:bg-sky-200 cursor-pointer">
+                                       onchange="previewHeroImage(this, 'preview-hero-main')"
+                                       class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 border border-slate-300 rounded-lg p-1 bg-slate-50 cursor-pointer">
+                                <span class="text-[11px] text-slate-400">Pilih file foto dari laptop/PC Anda (format JPG, PNG, WEBP maks 3MB).</span>
                             </div>
+
                             <div>
-                                <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Atau Masukkan Tautan URL Gambar</label>
-                                <input type="text" name="landing_hero_main_image" value="{{ old('landing_hero_main_image', $settings['landing_hero_main_image'] ?? '') }}"
-                                       placeholder="https://images.unsplash.com/..." class="w-full py-1.5 px-3 text-xs rounded-lg border border-slate-300 bg-white">
+                                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Atau Gunakan Tautan URL Gambar</label>
+                                <input type="text" name="landing_hero_main_image"
+                                       oninput="previewHeroUrl(this.value, 'preview-hero-main')"
+                                       value="{{ old('landing_hero_main_image', $settings['landing_hero_main_image'] ?? '') }}"
+                                       placeholder="https://images.unsplash.com/photo-..." class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 bg-white">
                             </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                                 <div>
-                                    <label class="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Judul Caption Foto</label>
+                                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Judul Caption Foto</label>
                                     <input type="text" name="landing_hero_main_title" value="{{ old('landing_hero_main_title', $settings['landing_hero_main_title'] ?? 'Penimbangan Digital & Penampungan Logam Scrap') }}"
-                                           class="w-full py-1 px-2.5 text-xs rounded border border-slate-300 bg-white">
+                                           class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 bg-white">
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Subjudul / Label Lokasi</label>
+                                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Subjudul / Lokasi</label>
                                     <input type="text" name="landing_hero_main_subtitle" value="{{ old('landing_hero_main_subtitle', $settings['landing_hero_main_subtitle'] ?? 'Depo Srengseng Sawah • Jagakarsa') }}"
-                                           class="w-full py-1 px-2.5 text-xs rounded border border-slate-300 bg-white">
+                                           class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 bg-white">
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- 3 FOTO CUPLIKAN - 5 Columns on LG -->
-                    <div class="lg:col-span-5 space-y-3">
-                        <!-- Cuplikan 1: Logam / Tembaga -->
-                        <div class="bg-white p-3 rounded-xl border border-sky-200 shadow-xs space-y-2">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-bold text-slate-800">2. Cuplikan 1 (Scrap Logam Presisi)</span>
-                                <span class="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-mono font-bold">Slot 1</span>
+                <!-- 2, 3, 4: 3 FOTO CUPLIKAN (3 KOLOM BERJAJAR RAPI) -->
+                <div>
+                    <h5 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-3 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span>3 Foto Cuplikan Pendamping (Slot 1, 2, 3)</span>
+                    </h5>
+
+                    <div class="hero-sub-grid">
+                        <!-- Cuplikan 1 -->
+                        <div class="hero-sub-card">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                                <span class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                    <span class="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px] font-bold">2</span>
+                                    <span>Cuplikan 1 (Logam Presisi)</span>
+                                </span>
+                                <span class="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-mono font-bold">Slot 1</span>
                             </div>
-                            <div class="flex gap-3">
-                                <div class="w-20 h-16 rounded overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
-                                    <img src="{{ !empty($settings['landing_hero_sub1_image']) ? (str_starts_with($settings['landing_hero_sub1_image'], 'http') ? $settings['landing_hero_sub1_image'] : asset($settings['landing_hero_sub1_image'])) : 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?q=80&w=800&auto=format&fit=crop' }}"
-                                         alt="Cuplikan 1" class="w-full h-full object-cover">
-                                </div>
-                                <div class="flex-1 space-y-1">
-                                    <input type="file" name="landing_hero_sub1_image_file" accept="image/*" class="w-full text-[10px] file:py-1 file:px-2 file:rounded file:border-0 file:bg-sky-100 file:text-sky-800 cursor-pointer">
-                                    <input type="text" name="landing_hero_sub1_image" value="{{ old('landing_hero_sub1_image', $settings['landing_hero_sub1_image'] ?? '') }}" placeholder="Atau paste URL gambar..." class="w-full py-1 px-2 text-[11px] rounded border border-slate-300">
-                                </div>
+
+                            <div class="hero-preview-box-sub">
+                                <img id="preview-hero-sub1"
+                                     src="{{ !empty($settings['landing_hero_sub1_image']) ? (str_starts_with($settings['landing_hero_sub1_image'], 'http') ? $settings['landing_hero_sub1_image'] : asset($settings['landing_hero_sub1_image'])) : 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?q=80&w=800&auto=format&fit=crop' }}"
+                                     alt="Cuplikan 1">
                             </div>
-                            <div class="grid grid-cols-2 gap-2 pt-1">
-                                <input type="text" name="landing_hero_sub1_tag" value="{{ old('landing_hero_sub1_tag', $settings['landing_hero_sub1_tag'] ?? 'Logam Presisi') }}" placeholder="Tag badge" class="py-1 px-2 text-[10px] rounded border border-slate-300">
-                                <input type="text" name="landing_hero_sub1_title" value="{{ old('landing_hero_sub1_title', $settings['landing_hero_sub1_title'] ?? 'Tembaga, Kuningan & Nikel') }}" placeholder="Judul foto" class="py-1 px-2 text-[10px] rounded border border-slate-300">
+
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-700 uppercase mb-0.5">Unggah Foto Baru</label>
+                                    <input type="file" name="landing_hero_sub1_image_file" accept="image/*"
+                                           onchange="previewHeroImage(this, 'preview-hero-sub1')"
+                                           class="w-full text-[11px] text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-slate-100 file:text-slate-700 border border-slate-300 rounded p-1 cursor-pointer bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-700 uppercase mb-0.5">Atau URL Gambar</label>
+                                    <input type="text" name="landing_hero_sub1_image"
+                                           oninput="previewHeroUrl(this.value, 'preview-hero-sub1')"
+                                           value="{{ old('landing_hero_sub1_image', $settings['landing_hero_sub1_image'] ?? '') }}"
+                                           placeholder="https://..." class="w-full py-1.5 px-2.5 text-xs rounded border border-slate-300 bg-white">
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 pt-1">
+                                    <div>
+                                        <label class="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Tag Badge</label>
+                                        <input type="text" name="landing_hero_sub1_tag" value="{{ old('landing_hero_sub1_tag', $settings['landing_hero_sub1_tag'] ?? 'Logam Presisi') }}"
+                                               class="w-full py-1.5 px-2 text-xs rounded border border-slate-300 bg-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Judul</label>
+                                        <input type="text" name="landing_hero_sub1_title" value="{{ old('landing_hero_sub1_title', $settings['landing_hero_sub1_title'] ?? 'Tembaga, Kuningan & Nikel') }}"
+                                               class="w-full py-1.5 px-2 text-xs rounded border border-slate-300 bg-white">
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Cuplikan 2: Armada Truk 24 Jam -->
-                        <div class="bg-white p-3 rounded-xl border border-sky-200 shadow-xs space-y-2">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-bold text-slate-800">3. Cuplikan 2 (Armada Truk & Pick-Up)</span>
-                                <span class="text-[10px] text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded font-mono font-bold">Slot 2</span>
+                        <!-- Cuplikan 2 -->
+                        <div class="hero-sub-card">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                                <span class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                    <span class="w-5 h-5 rounded-full bg-sky-500 text-white flex items-center justify-center text-[10px] font-bold">3</span>
+                                    <span>Cuplikan 2 (Armada Jemput)</span>
+                                </span>
+                                <span class="text-[10px] text-sky-700 bg-sky-50 px-2 py-0.5 rounded font-mono font-bold">Slot 2</span>
                             </div>
-                            <div class="flex gap-3">
-                                <div class="w-20 h-16 rounded overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
-                                    <img src="{{ !empty($settings['landing_hero_sub2_image']) ? (str_starts_with($settings['landing_hero_sub2_image'], 'http') ? $settings['landing_hero_sub2_image'] : asset($settings['landing_hero_sub2_image'])) : 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=800&auto=format&fit=crop' }}"
-                                         alt="Cuplikan 2" class="w-full h-full object-cover">
-                                </div>
-                                <div class="flex-1 space-y-1">
-                                    <input type="file" name="landing_hero_sub2_image_file" accept="image/*" class="w-full text-[10px] file:py-1 file:px-2 file:rounded file:border-0 file:bg-sky-100 file:text-sky-800 cursor-pointer">
-                                    <input type="text" name="landing_hero_sub2_image" value="{{ old('landing_hero_sub2_image', $settings['landing_hero_sub2_image'] ?? '') }}" placeholder="Atau paste URL gambar..." class="w-full py-1 px-2 text-[11px] rounded border border-slate-300">
-                                </div>
+
+                            <div class="hero-preview-box-sub">
+                                <img id="preview-hero-sub2"
+                                     src="{{ !empty($settings['landing_hero_sub2_image']) ? (str_starts_with($settings['landing_hero_sub2_image'], 'http') ? $settings['landing_hero_sub2_image'] : asset($settings['landing_hero_sub2_image'])) : 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=800&auto=format&fit=crop' }}"
+                                     alt="Cuplikan 2">
                             </div>
-                            <div class="grid grid-cols-2 gap-2 pt-1">
-                                <input type="text" name="landing_hero_sub2_tag" value="{{ old('landing_hero_sub2_tag', $settings['landing_hero_sub2_tag'] ?? 'Armada Jemput') }}" placeholder="Tag badge" class="py-1 px-2 text-[10px] rounded border border-slate-300">
-                                <input type="text" name="landing_hero_sub2_title" value="{{ old('landing_hero_sub2_title', $settings['landing_hero_sub2_title'] ?? 'Truk & Pick-Up Siap 24 Jam') }}" placeholder="Judul foto" class="py-1 px-2 text-[10px] rounded border border-slate-300">
+
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-700 uppercase mb-0.5">Unggah Foto Baru</label>
+                                    <input type="file" name="landing_hero_sub2_image_file" accept="image/*"
+                                           onchange="previewHeroImage(this, 'preview-hero-sub2')"
+                                           class="w-full text-[11px] text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-slate-100 file:text-slate-700 border border-slate-300 rounded p-1 cursor-pointer bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-700 uppercase mb-0.5">Atau URL Gambar</label>
+                                    <input type="text" name="landing_hero_sub2_image"
+                                           oninput="previewHeroUrl(this.value, 'preview-hero-sub2')"
+                                           value="{{ old('landing_hero_sub2_image', $settings['landing_hero_sub2_image'] ?? '') }}"
+                                           placeholder="https://..." class="w-full py-1.5 px-2.5 text-xs rounded border border-slate-300 bg-white">
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 pt-1">
+                                    <div>
+                                        <label class="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Tag Badge</label>
+                                        <input type="text" name="landing_hero_sub2_tag" value="{{ old('landing_hero_sub2_tag', $settings['landing_hero_sub2_tag'] ?? 'Armada Jemput') }}"
+                                               class="w-full py-1.5 px-2 text-xs rounded border border-slate-300 bg-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Judul</label>
+                                        <input type="text" name="landing_hero_sub2_title" value="{{ old('landing_hero_sub2_title', $settings['landing_hero_sub2_title'] ?? 'Truk & Pick-Up Siap 24 Jam') }}"
+                                               class="w-full py-1.5 px-2 text-xs rounded border border-slate-300 bg-white">
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Cuplikan 3: Bongkaran Gedung & Tabung Gas -->
-                        <div class="bg-white p-3 rounded-xl border border-sky-200 shadow-xs space-y-2">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-bold text-slate-800">4. Cuplikan 3 (Bongkaran Gedung & Tabung Gas)</span>
-                                <span class="text-[10px] text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded font-mono font-bold">Slot 3</span>
+                        <!-- Cuplikan 3 -->
+                        <div class="hero-sub-card">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                                <span class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                    <span class="w-5 h-5 rounded-full bg-teal-500 text-white flex items-center justify-center text-[10px] font-bold">4</span>
+                                    <span>Cuplikan 3 (Bongkaran & Gas)</span>
+                                </span>
+                                <span class="text-[10px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded font-mono font-bold">Slot 3</span>
                             </div>
-                            <div class="flex gap-3">
-                                <div class="w-20 h-16 rounded overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
-                                    <img src="{{ !empty($settings['landing_hero_sub3_image']) ? (str_starts_with($settings['landing_hero_sub3_image'], 'http') ? $settings['landing_hero_sub3_image'] : asset($settings['landing_hero_sub3_image'])) : 'https://images.unsplash.com/photo-1526951521990-620dc14c214b?q=80&w=800&auto=format&fit=crop' }}"
-                                         alt="Cuplikan 3" class="w-full h-full object-cover">
-                                </div>
-                                <div class="flex-1 space-y-1">
-                                    <input type="file" name="landing_hero_sub3_image_file" accept="image/*" class="w-full text-[10px] file:py-1 file:px-2 file:rounded file:border-0 file:bg-sky-100 file:text-sky-800 cursor-pointer">
-                                    <input type="text" name="landing_hero_sub3_image" value="{{ old('landing_hero_sub3_image', $settings['landing_hero_sub3_image'] ?? '') }}" placeholder="Atau paste URL gambar..." class="w-full py-1 px-2 text-[11px] rounded border border-slate-300">
-                                </div>
+
+                            <div class="hero-preview-box-sub">
+                                <img id="preview-hero-sub3"
+                                     src="{{ !empty($settings['landing_hero_sub3_image']) ? (str_starts_with($settings['landing_hero_sub3_image'], 'http') ? $settings['landing_hero_sub3_image'] : asset($settings['landing_hero_sub3_image'])) : 'https://images.unsplash.com/photo-1526951521990-620dc14c214b?q=80&w=800&auto=format&fit=crop' }}"
+                                     alt="Cuplikan 3">
                             </div>
-                            <div class="grid grid-cols-2 gap-2 pt-1">
-                                <input type="text" name="landing_hero_sub3_tag" value="{{ old('landing_hero_sub3_tag', $settings['landing_hero_sub3_tag'] ?? 'Bongkar & Gas') }}" placeholder="Tag badge" class="py-1 px-2 text-[10px] rounded border border-slate-300">
-                                <input type="text" name="landing_hero_sub3_title" value="{{ old('landing_hero_sub3_title', $settings['landing_hero_sub3_title'] ?? 'Bongkar Gedung & Tabung Gas') }}" placeholder="Judul foto" class="py-1 px-2 text-[10px] rounded border border-slate-300">
+
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-700 uppercase mb-0.5">Unggah Foto Baru</label>
+                                    <input type="file" name="landing_hero_sub3_image_file" accept="image/*"
+                                           onchange="previewHeroImage(this, 'preview-hero-sub3')"
+                                           class="w-full text-[11px] text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-slate-100 file:text-slate-700 border border-slate-300 rounded p-1 cursor-pointer bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-slate-700 uppercase mb-0.5">Atau URL Gambar</label>
+                                    <input type="text" name="landing_hero_sub3_image"
+                                           oninput="previewHeroUrl(this.value, 'preview-hero-sub3')"
+                                           value="{{ old('landing_hero_sub3_image', $settings['landing_hero_sub3_image'] ?? '') }}"
+                                           placeholder="https://..." class="w-full py-1.5 px-2.5 text-xs rounded border border-slate-300 bg-white">
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 pt-1">
+                                    <div>
+                                        <label class="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Tag Badge</label>
+                                        <input type="text" name="landing_hero_sub3_tag" value="{{ old('landing_hero_sub3_tag', $settings['landing_hero_sub3_tag'] ?? 'Bongkar & Gas') }}"
+                                               class="w-full py-1.5 px-2 text-xs rounded border border-slate-300 bg-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-semibold text-slate-600 uppercase mb-0.5">Judul</label>
+                                        <input type="text" name="landing_hero_sub3_title" value="{{ old('landing_hero_sub3_title', $settings['landing_hero_sub3_title'] ?? 'Bongkar Gedung & Tabung Gas') }}"
+                                               class="w-full py-1.5 px-2 text-xs rounded border border-slate-300 bg-white">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -561,6 +738,23 @@
 
     <!-- TAB 4: GALERI FOTO -->
     <div x-show="activeTab === 'gallery'" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+        <!-- Quick Switch Tip Banner -->
+        <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <span class="text-xs font-bold text-emerald-950 block">Mencari Foto Hero Halaman Utama Website?</span>
+                    <span class="text-[11px] text-emerald-700">4 Foto showcase bento hero diatur secara khusus di tab Hero & Tentang Kami.</span>
+                </div>
+            </div>
+            <button type="button" @click="activeTab = 'hero-about'; history.replaceState(null, '', '?tab=hero-about')" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition shrink-0 flex items-center gap-1.5 shadow-sm">
+                <span>Buka Pengaturan Foto Hero</span>
+                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
+        </div>
+
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
             <div>
                 <h3 class="text-base font-bold text-slate-900">Galeri Foto & Dokumentasi Operasional</h3>
@@ -910,4 +1104,26 @@
 
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    function previewHeroImage(input, targetId) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById(targetId);
+                if (img) img.src = e.target.result;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    function previewHeroUrl(url, targetId) {
+        if (url && url.trim().length > 7) {
+            const img = document.getElementById(targetId);
+            if (img) img.src = url.trim();
+        }
+    }
+</script>
+@endpush
+
 
