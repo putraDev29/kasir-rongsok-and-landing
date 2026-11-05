@@ -25,6 +25,23 @@ export default function HeroSection({ hero, settings }: HeroSectionProps) {
     if (el) el.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Dynamic Bento Visuals configured from Landing Page Management
+  const mainImage = hero.main_image || hero.background_image || "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format&fit=crop";
+  const mainTitle = hero.main_title || "Penimbangan Digital & Penampungan Logam Scrap";
+  const mainSubtitle = hero.main_subtitle || "Depo Srengseng Sawah • Jagakarsa";
+
+  const sub1Image = hero.sub1_image || "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?q=80&w=800&auto=format&fit=crop";
+  const sub1Title = hero.sub1_title || "Tembaga, Kuningan & Nikel";
+  const sub1Tag = hero.sub1_tag || "Logam Presisi";
+
+  const sub2Image = hero.sub2_image || "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=800&auto=format&fit=crop";
+  const sub2Title = hero.sub2_title || "Truk & Pick-Up Siap 24 Jam";
+  const sub2Tag = hero.sub2_tag || "Armada Jemput";
+
+  const sub3Image = hero.sub3_image || "https://images.unsplash.com/photo-1526951521990-620dc14c214b?q=80&w=800&auto=format&fit=crop";
+  const sub3Title = hero.sub3_title || "Bongkar Gedung & Tabung Gas";
+  const sub3Tag = hero.sub3_tag || "Bongkar & Gas";
+
   return (
     <section
       id="hero"
@@ -90,10 +107,11 @@ export default function HeroSection({ hero, settings }: HeroSectionProps) {
           {/* Main Hero Photo (Fills dynamically on mobile, 7 cols on desktop) */}
           <div className="md:col-span-7 flex-1 min-h-0 md:h-full relative rounded-2xl md:rounded-3xl overflow-hidden shadow-md border border-sky-100 group">
             <Image
-              src="https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format&fit=crop"
-              alt="Gudang Scrap Besi Tua & Logam"
+              src={mainImage}
+              alt={mainTitle}
               fill
               priority
+              unoptimized={mainImage.startsWith("http://localhost") || mainImage.startsWith("http://127.0.0.1")}
               className="object-cover group-hover:scale-105 transition-transform duration-700"
               sizes="(max-width: 768px) 100vw, 60vw"
             />
@@ -111,8 +129,8 @@ export default function HeroSection({ hero, settings }: HeroSectionProps) {
             {/* Bottom Caption on Photo */}
             <div className="absolute bottom-2.5 left-2.5 right-2.5 sm:bottom-4 sm:left-4 sm:right-4 flex items-end justify-between">
               <div className="text-white space-y-0.5">
-                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-sky-300">Depo Srengseng Sawah • Jagakarsa</span>
-                <h3 className="text-xs sm:text-base font-bold text-white leading-snug">Penimbangan Digital & Penampungan Logam Scrap</h3>
+                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-sky-300">{mainSubtitle}</span>
+                <h3 className="text-xs sm:text-base font-bold text-white leading-snug">{mainTitle}</h3>
                 <p className="text-[11px] text-slate-200 hidden sm:block line-clamp-1">Fasilitas timbangan digital akurat di Jakarta Selatan, siap tampung partai kecil & besar.</p>
               </div>
 
@@ -133,48 +151,51 @@ export default function HeroSection({ hero, settings }: HeroSectionProps) {
             {/* Card 1: Scrap Tembaga & Kuningan */}
             <div className="relative h-full min-h-0 rounded-xl sm:rounded-2xl overflow-hidden shadow-xs border border-sky-100 group">
               <Image
-                src="https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?q=80&w=800&auto=format&fit=crop"
-                alt="Scrap Tembaga & Logam Non-Besi"
+                src={sub1Image}
+                alt={sub1Title}
                 fill
+                unoptimized={sub1Image.startsWith("http://localhost") || sub1Image.startsWith("http://127.0.0.1")}
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="(max-width: 768px) 33vw, 40vw"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent" />
               <div className="absolute bottom-1.5 left-2 right-2 text-white">
-                <span className="text-[7.5px] sm:text-[9px] text-amber-300 font-bold uppercase tracking-wider block">Logam Presisi</span>
-                <h4 className="text-[9.5px] sm:text-xs md:text-sm font-bold text-white leading-tight line-clamp-1">Tembaga, Kuningan & Nikel</h4>
+                <span className="text-[7.5px] sm:text-[9px] text-amber-300 font-bold uppercase tracking-wider block">{sub1Tag}</span>
+                <h4 className="text-[9.5px] sm:text-xs md:text-sm font-bold text-white leading-tight line-clamp-1">{sub1Title}</h4>
               </div>
             </div>
 
             {/* Card 2: Armada Penjemputan Truk / Pick-Up */}
             <div className="relative h-full min-h-0 rounded-xl sm:rounded-2xl overflow-hidden shadow-xs border border-sky-100 group">
               <Image
-                src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=800&auto=format&fit=crop"
-                alt="Armada Penjemputan Truk Rongsokan"
+                src={sub2Image}
+                alt={sub2Title}
                 fill
+                unoptimized={sub2Image.startsWith("http://localhost") || sub2Image.startsWith("http://127.0.0.1")}
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="(max-width: 768px) 33vw, 40vw"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent" />
               <div className="absolute bottom-1.5 left-2 right-2 text-white">
-                <span className="text-[7.5px] sm:text-[9px] text-sky-300 font-bold uppercase tracking-wider block">Armada Jemput</span>
-                <h4 className="text-[9.5px] sm:text-xs md:text-sm font-bold text-white leading-tight line-clamp-1">Truk & Pick-Up Siap 24 Jam</h4>
+                <span className="text-[7.5px] sm:text-[9px] text-sky-300 font-bold uppercase tracking-wider block">{sub2Tag}</span>
+                <h4 className="text-[9.5px] sm:text-xs md:text-sm font-bold text-white leading-tight line-clamp-1">{sub2Title}</h4>
               </div>
             </div>
 
             {/* Card 3: Bongkaran Bangunan & Tabung Gas */}
             <div className="relative h-full min-h-0 rounded-xl sm:rounded-2xl overflow-hidden shadow-xs border border-sky-100 group">
               <Image
-                src="https://images.unsplash.com/photo-1526951521990-620dc14c214b?q=80&w=800&auto=format&fit=crop"
-                alt="Bongkaran Bangunan & Tabung Gas"
+                src={sub3Image}
+                alt={sub3Title}
                 fill
+                unoptimized={sub3Image.startsWith("http://localhost") || sub3Image.startsWith("http://127.0.0.1")}
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="(max-width: 768px) 33vw, 40vw"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent" />
               <div className="absolute bottom-1.5 left-2 right-2 text-white">
-                <span className="text-[7.5px] sm:text-[9px] text-teal-300 font-bold uppercase tracking-wider block">Bongkar & Gas</span>
-                <h4 className="text-[9.5px] sm:text-xs md:text-sm font-bold text-white leading-tight line-clamp-1">Bongkar Gedung & Tabung Gas</h4>
+                <span className="text-[7.5px] sm:text-[9px] text-teal-300 font-bold uppercase tracking-wider block">{sub3Tag}</span>
+                <h4 className="text-[9.5px] sm:text-xs md:text-sm font-bold text-white leading-tight line-clamp-1">{sub3Title}</h4>
               </div>
             </div>
           </div>

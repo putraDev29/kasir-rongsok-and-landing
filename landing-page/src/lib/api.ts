@@ -9,10 +9,11 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
+        Connection: "close",
         ...(options?.headers || {}),
       },
-      // Revalidate every 60 seconds by default for high performance & fresh data
-      next: { revalidate: 60 },
+      // Always fetch fresh data so admin changes take effect immediately
+      cache: "no-store",
     });
 
     if (!res.ok) {

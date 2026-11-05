@@ -84,6 +84,14 @@ class LandingPageAdminController extends Controller
             'landing_hero_subheadline',
             'landing_hero_cta_primary',
             'landing_hero_cta_secondary',
+            'landing_hero_main_title',
+            'landing_hero_main_subtitle',
+            'landing_hero_sub1_title',
+            'landing_hero_sub1_tag',
+            'landing_hero_sub2_title',
+            'landing_hero_sub2_tag',
+            'landing_hero_sub3_title',
+            'landing_hero_sub3_tag',
             'landing_about_title',
             'landing_about_description',
             'landing_about_vision',
@@ -97,8 +105,34 @@ class LandingPageAdminController extends Controller
             }
         }
 
+        // Process Hero Showcase Image Uploads or Direct URLs
+        $destination = public_path('uploads/hero');
+        if (!file_exists($destination)) {
+            @mkdir($destination, 0775, true);
+        }
+
+        $heroImageSlots = [
+            'landing_hero_main_image' => 'main',
+            'landing_hero_sub1_image' => 'sub1',
+            'landing_hero_sub2_image' => 'sub2',
+            'landing_hero_sub3_image' => 'sub3',
+        ];
+
+        foreach ($heroImageSlots as $key => $prefix) {
+            $fileKey = $key . '_file';
+            if ($request->hasFile($fileKey)) {
+                $file = $request->file($fileKey);
+                $ext = $file->getClientOriginalExtension() ?: 'jpg';
+                $filename = 'hero_' . $prefix . '_' . time() . '.' . $ext;
+                $file->move($destination, $filename);
+                BusinessSetting::set($key, 'uploads/hero/' . $filename, 'landing_page');
+            } elseif ($request->filled($key)) {
+                BusinessSetting::set($key, $request->input($key), 'landing_page');
+            }
+        }
+
         return redirect()->route('landing-admin.index', ['tab' => 'hero-about'])
-            ->with('success', 'Konten Hero dan Tentang Kami berhasil diperbarui.');
+            ->with('success', 'Konten Hero, Foto Showcase, dan Profil Tentang Kami berhasil diperbarui.');
     }
 
     /**

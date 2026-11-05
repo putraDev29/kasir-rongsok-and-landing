@@ -118,7 +118,34 @@ class LandingPageApiController extends Controller
                     'subheadline' => $settings['hero_subheadline'],
                     'cta_primary' => $settings['hero_cta_primary'],
                     'cta_secondary' => $settings['hero_cta_secondary'],
-                    'background_image' => 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1600&auto=format&fit=crop',
+                    'background_image' => $this->formatImageUrl(
+                        BusinessSetting::get('landing_hero_main_image'),
+                        'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format&fit=crop'
+                    ),
+                    'main_image' => $this->formatImageUrl(
+                        BusinessSetting::get('landing_hero_main_image'),
+                        'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format&fit=crop'
+                    ),
+                    'main_title' => BusinessSetting::get('landing_hero_main_title', 'Penimbangan Digital & Penampungan Logam Scrap'),
+                    'main_subtitle' => BusinessSetting::get('landing_hero_main_subtitle', 'Depo Srengseng Sawah • Jagakarsa'),
+                    'sub1_image' => $this->formatImageUrl(
+                        BusinessSetting::get('landing_hero_sub1_image'),
+                        'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?q=80&w=800&auto=format&fit=crop'
+                    ),
+                    'sub1_title' => BusinessSetting::get('landing_hero_sub1_title', 'Tembaga, Kuningan & Nikel'),
+                    'sub1_tag' => BusinessSetting::get('landing_hero_sub1_tag', 'Logam Presisi'),
+                    'sub2_image' => $this->formatImageUrl(
+                        BusinessSetting::get('landing_hero_sub2_image'),
+                        'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=800&auto=format&fit=crop'
+                    ),
+                    'sub2_title' => BusinessSetting::get('landing_hero_sub2_title', 'Truk & Pick-Up Siap 24 Jam'),
+                    'sub2_tag' => BusinessSetting::get('landing_hero_sub2_tag', 'Armada Jemput'),
+                    'sub3_image' => $this->formatImageUrl(
+                        BusinessSetting::get('landing_hero_sub3_image'),
+                        'https://images.unsplash.com/photo-1526951521990-620dc14c214b?q=80&w=800&auto=format&fit=crop'
+                    ),
+                    'sub3_title' => BusinessSetting::get('landing_hero_sub3_title', 'Bongkar Gedung & Tabung Gas'),
+                    'sub3_tag' => BusinessSetting::get('landing_hero_sub3_tag', 'Bongkar & Gas'),
                 ],
                 'about' => [
                     'title' => $settings['about_title'],
@@ -448,6 +475,20 @@ class LandingPageApiController extends Controller
                 }),
             ];
         })->toArray();
+    }
+
+    /**
+     * Helper: Format image path to full URL
+     */
+    protected function formatImageUrl(?string $path, string $fallback): string
+    {
+        if (empty($path)) {
+            return $fallback;
+        }
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+        return url(ltrim($path, '/'));
     }
 }
 

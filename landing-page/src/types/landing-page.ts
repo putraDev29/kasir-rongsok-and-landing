@@ -40,7 +40,19 @@ export interface HeroData {
   subheadline: string;
   cta_primary: string;
   cta_secondary: string;
-  background_image: string;
+  background_image?: string;
+  main_image?: string;
+  main_title?: string;
+  main_subtitle?: string;
+  sub1_image?: string;
+  sub1_title?: string;
+  sub1_tag?: string;
+  sub2_image?: string;
+  sub2_title?: string;
+  sub2_tag?: string;
+  sub3_image?: string;
+  sub3_title?: string;
+  sub3_tag?: string;
 }
 
 export interface AboutData {

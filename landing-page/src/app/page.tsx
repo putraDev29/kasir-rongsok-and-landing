@@ -16,6 +16,10 @@ import TestimonialsSection from "@/components/sections/TestimonialsSection";
 import FAQSection from "@/components/sections/FAQSection";
 import ContactSection from "@/components/sections/ContactSection";
 
+// Ensure instant real-time updates when admin saves changes in Laravel dashboard
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function HomePage() {
   const data = await getLandingPageData();
 
