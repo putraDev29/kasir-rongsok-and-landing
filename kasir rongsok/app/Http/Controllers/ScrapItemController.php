@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\ItemCategory;
 use App\Models\ScrapItem;
 use App\Models\StockBalance;
+use App\Services\CloudSyncService;
 use App\Services\StockService;
 use Exception;
 use Illuminate\Http\RedirectResponse;
@@ -75,6 +76,9 @@ class ScrapItemController extends Controller
             description: "Menambahkan jenis barang rongsok baru: {$item->name} ({$item->code})"
         );
 
+        // Auto sync master barang & harga ke cloud hosting jika diaktifkan
+        CloudSyncService::autoSyncIfEnabled();
+
         return redirect()->route('scrap-items.index')->with('success', "Barang rongsok '{$item->name}' berhasil ditambahkan.");
     }
 
@@ -111,6 +115,9 @@ class ScrapItemController extends Controller
             description: "Memperbarui data barang rongsok: {$scrapItem->name}"
         );
 
+        // Auto sync master barang & harga ke cloud hosting jika diaktifkan
+        CloudSyncService::autoSyncIfEnabled();
+
         return redirect()->route('scrap-items.index')->with('success', "Data barang '{$scrapItem->name}' berhasil diperbarui.");
     }
 
@@ -132,6 +139,9 @@ class ScrapItemController extends Controller
             Auth::user()
         );
 
+        // Auto sync master barang & harga ke cloud hosting jika diaktifkan
+        CloudSyncService::autoSyncIfEnabled();
+
         return back()->with('success', "Harga barang '{$scrapItem->name}' berhasil diperbarui.");
     }
 
@@ -152,6 +162,9 @@ class ScrapItemController extends Controller
             action: 'scrap_item_deleted',
             description: "Menghapus jenis barang: {$name}"
         );
+
+        // Auto sync master barang & harga ke cloud hosting jika diaktifkan
+        CloudSyncService::autoSyncIfEnabled();
 
         return redirect()->route('scrap-items.index')->with('success', "Barang '{$name}' berhasil dihapus.");
     }

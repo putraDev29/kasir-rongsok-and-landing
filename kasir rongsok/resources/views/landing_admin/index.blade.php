@@ -197,6 +197,14 @@
             <i data-lucide="inbox" class="w-4 h-4"></i>
             <span>Kotak Masuk ({{ $inquiries->count() }})</span>
         </button>
+
+        <button type="button" @click="activeTab = 'cloud-sync'; history.replaceState(null, '', '?tab=cloud-sync')" :class="activeTab === 'cloud-sync' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-700 bg-indigo-50 hover:bg-indigo-100'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2 border border-indigo-200">
+            <i data-lucide="cloud-lightning" class="w-4 h-4 text-indigo-500" :class="activeTab === 'cloud-sync' ? 'text-white' : ''"></i>
+            <span>Sync Hosting cPanel</span>
+            @if($syncConfig['enabled'])
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            @endif
+        </button>
     </div>
 
     <!-- TAB 1: LOGO, KONTAK, MAPS & SEO -->
@@ -1468,6 +1476,259 @@
                 </table>
             </div>
         @endif
+    </div>
+
+    <!-- TAB 10: CLOUD SYNC HOSTING CPANEL -->
+    <div x-show="activeTab === 'cloud-sync'" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+        <!-- Top Hero Banner -->
+        <div class="p-6 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl border border-indigo-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-5">
+            <div class="flex items-start sm:items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center shrink-0 shadow-lg">
+                    <i data-lucide="cloud-lightning" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-base font-black tracking-tight text-white">Sinkronisasi Otomatis ke Hosting cPanel</h3>
+                        @if($syncConfig['enabled'])
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500 text-slate-950 uppercase tracking-wider">
+                                Aktif (Online Sync)
+                            </span>
+                        @else
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400 text-slate-950 uppercase tracking-wider">
+                                Nonaktif (Hanya Lokal)
+                            </span>
+                        @endif
+                    </div>
+                    <p class="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                        Input data kasir, master barang, harga rongsok harian, dan story dilakukan dari <strong>komputer lokal depo</strong>. Saat Anda submit atau update harga, sistem secara otomatis mengirimkan dan memperbarui data ke <strong>database hosting cPanel</strong> agar website landing page online selalu menampilkan harga dan foto terbaru!
+                    </p>
+                </div>
+            </div>
+
+            <!-- Full Sync Button -->
+            <form action="{{ route('landing-admin.sync.now') }}" method="POST" class="shrink-0" onsubmit="return confirm('Mulai proses sinkronisasi penuh (Full Sync) ke hosting cPanel sekarang?')">
+                @csrf
+                <button type="submit" class="px-5 py-3 bg-gradient-to-r from-indigo-500 to-sky-500 hover:from-indigo-400 hover:to-sky-400 text-white text-xs font-black rounded-xl transition flex items-center gap-2 shadow-lg shadow-indigo-500/20 hover:scale-105 active:scale-95">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    <span>Sinkronkan Sekarang (Full Sync)</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Sync Status Dashboard Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Card 1: Status Koneksi -->
+            <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-1">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Status Sinkronisasi</span>
+                <div class="flex items-center gap-2">
+                    @if($syncConfig['last_status'] === 'success')
+                        <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="text-sm font-black text-emerald-700">Berhasil Sinkron</span>
+                    @elseif($syncConfig['last_status'] === 'failed')
+                        <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+                        <span class="text-sm font-black text-rose-600">Gagal Terhubung</span>
+                    @else
+                        <span class="w-3 h-3 rounded-full bg-slate-400"></span>
+                        <span class="text-sm font-bold text-slate-600">Belum Sinkron</span>
+                    @endif
+                </div>
+                <p class="text-[11px] text-slate-500 truncate" title="{{ $syncConfig['last_message'] }}">
+                    {{ $syncConfig['last_message'] }}
+                </p>
+            </div>
+
+            <!-- Card 2: Terakhir Sinkron -->
+            <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-1">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Waktu Terakhir Sync</span>
+                <div class="text-sm font-black text-slate-900">
+                    {{ $syncConfig['last_synced_at'] ? \Carbon\Carbon::parse($syncConfig['last_synced_at'])->diffForHumans() : 'Belum pernah' }}
+                </div>
+                <span class="text-[10px] text-slate-400 font-mono">
+                    {{ $syncConfig['last_synced_at'] ?: '-' }}
+                </span>
+            </div>
+
+            <!-- Card 3: Master Barang & Harga -->
+            <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-1">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Master Barang & Harga</span>
+                <div class="text-sm font-black text-slate-900 flex items-center gap-1.5">
+                    <i data-lucide="package" class="w-4 h-4 text-emerald-600"></i>
+                    <span>{{ $syncCounts['items'] ?? 0 }} Barang</span>
+                </div>
+                <span class="text-[11px] text-slate-500">{{ $syncCounts['categories'] ?? 0 }} Kategori Logam & Rongsok</span>
+            </div>
+
+            <!-- Card 4: Story & Media -->
+            <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-1">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Story & Konten Landing</span>
+                <div class="text-sm font-black text-slate-900 flex items-center gap-1.5">
+                    <i data-lucide="play-circle" class="w-4 h-4 text-amber-500"></i>
+                    <span>{{ $syncCounts['stories'] ?? 0 }} Story Foto Reel</span>
+                </div>
+                <span class="text-[11px] text-slate-500">{{ $syncCounts['services'] ?? 0 }} Layanan, {{ $syncCounts['galleries'] ?? 0 }} Galeri</span>
+            </div>
+        </div>
+
+        <!-- Configuration Form & Test Connection -->
+        <div class="p-6 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-5" x-data="{
+            testingConnection: false,
+            testResult: null,
+            targetUrl: '{{ old('cloud_sync_url', $syncConfig['url']) }}',
+            targetSecret: '{{ old('cloud_sync_secret_key', $syncConfig['secret_key']) }}',
+            generateSecret() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                let res = 'sync_';
+                for (let i = 0; i < 32; i++) {
+                    res += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                this.targetSecret = res;
+            },
+            async runTest() {
+                if (!this.targetUrl) {
+                    alert('Silakan masukkan URL hosting cPanel terlebih dahulu.');
+                    return;
+                }
+                this.testingConnection = true;
+                this.testResult = null;
+                try {
+                    const res = await fetch('{{ route('landing-admin.sync.test') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            url: this.targetUrl,
+                            secret_key: this.targetSecret
+                        })
+                    });
+                    const json = await res.json();
+                    this.testResult = json;
+                } catch (e) {
+                    this.testResult = { success: false, message: 'Gagal melakukan tes: ' + e.message };
+                } finally {
+                    this.testingConnection = false;
+                }
+            }
+        }">
+            <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+                <div>
+                    <h4 class="font-bold text-sm text-slate-900 flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-4 h-4 text-indigo-600"></i>
+                        <span>Pengaturan Parameter Sinkronisasi</span>
+                    </h4>
+                    <p class="text-xs text-slate-500 mt-0.5">Konfigurasi alamat server cPanel hosting Anda dan token rahasia untuk otorisasi sinkronisasi data.</p>
+                </div>
+            </div>
+
+            <form action="{{ route('landing-admin.sync.config') }}" method="POST" class="space-y-4">
+                @csrf
+
+                <!-- Switches -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" name="cloud_sync_enabled" value="1" {{ $syncConfig['enabled'] ? 'checked' : '' }} class="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                        <div>
+                            <span class="text-xs font-bold text-slate-800 block">Aktifkan Cloud Sync ke Hosting cPanel</span>
+                            <span class="text-[11px] text-slate-500">Bila diaktifkan, komputer lokal depo dapat mengirimkan data ke hosting online.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" name="cloud_sync_auto_on_submit" value="1" {{ $syncConfig['auto_sync'] ? 'checked' : '' }} class="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                        <div>
+                            <span class="text-xs font-bold text-slate-800 block">Otomatis Sync Setiap Submit (Auto-Sync on Submit)</span>
+                            <span class="text-[11px] text-slate-500">Saat Anda ubah harga barang atau simpan manajemen landing page di lokal, data langsung otomatis dikirim ke cPanel hosting.</span>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- URL & Secret Key Input -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">URL Hosting cPanel Website *</label>
+                        <input type="url" name="cloud_sync_url" x-model="targetUrl" required placeholder="https://domainanda.com atau https://api.domainanda.com" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 font-mono">
+                        <span class="text-[11px] text-slate-400 mt-1 block">Contoh: <code>https://seberayalogam.com</code> (tanpa garis miring di akhir)</span>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="text-xs font-bold text-slate-700 uppercase">Secret Sync Key (Token Keamanan) *</label>
+                            <button type="button" @click="generateSecret()" class="text-[10px] text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1">
+                                <i data-lucide="key" class="w-3 h-3"></i> Buat Token Baru
+                            </button>
+                        </div>
+                        <input type="text" name="cloud_sync_secret_key" x-model="targetSecret" required placeholder="sync_xxxxxxxxxxxxxxxxxxxxxxxx" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 font-mono">
+                        <span class="text-[11px] text-slate-400 mt-1 block">Token ini harus sama persis dengan yang dipasang di hosting cPanel untuk keamanan.</span>
+                    </div>
+                </div>
+
+                <!-- Test Connection Feedback Banner -->
+                <template x-if="testResult">
+                    <div :class="testResult.success ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-rose-50 border-rose-300 text-rose-800'" class="p-3.5 rounded-xl border text-xs flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <i :data-lucide="testResult.success ? 'check-circle' : 'alert-circle'" class="w-4 h-4 shrink-0"></i>
+                            <span x-text="testResult.message" class="font-medium"></span>
+                        </div>
+                        <button type="button" @click="testResult = null" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                    </div>
+                </template>
+
+                <!-- Action Footer -->
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                    <button type="button" @click="runTest()" :disabled="testingConnection" class="w-full sm:w-auto px-4 py-2 border border-slate-300 hover:border-slate-400 text-slate-700 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2">
+                        <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-500" :class="testingConnection ? 'animate-spin' : ''"></i>
+                        <span x-text="testingConnection ? 'Sedang Menghubungi Hosting...' : 'Tes Koneksi ke Hosting'"></span>
+                    </button>
+
+                    <button type="submit" class="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        <span>Simpan Pengaturan Sync</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Panduan Praktis Deploy Hosting cPanel -->
+        <div class="p-5 rounded-2xl bg-slate-900 text-slate-200 border border-slate-800 space-y-4">
+            <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">
+                    <i data-lucide="book-open" class="w-4 h-4"></i>
+                </span>
+                <div>
+                    <h5 class="text-xs font-bold uppercase tracking-wider text-white">Panduan Praktis Setup Hosting cPanel</h5>
+                    <p class="text-[11px] text-slate-400">Ikuti 3 langkah mudah berikut agar hosting cPanel siap menerima sinkronisasi data dari komputer lokal depo:</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs">
+                <div class="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700 space-y-1.5">
+                    <span class="w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[10px] font-black">1</span>
+                    <h6 class="font-bold text-white">Upload Backend ke cPanel</h6>
+                    <p class="text-[11px] text-slate-300 leading-relaxed">
+                        Upload source code Laravel ke File Manager cPanel (atau subdomain <code>api.domainanda.com</code>). Jalankan <code>php artisan migrate</code> di Terminal cPanel.
+                    </p>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700 space-y-1.5">
+                    <span class="w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[10px] font-black">2</span>
+                    <h6 class="font-bold text-white">Pasang Secret Sync Key di .env</h6>
+                    <p class="text-[11px] text-slate-300 leading-relaxed">
+                        Buka file <code>.env</code> di hosting cPanel, tambahkan baris:<br>
+                        <code class="text-amber-400 bg-slate-950 px-1 py-0.5 rounded text-[10px]">CLOUD_SYNC_SECRET=sync_xxxxxxxx...</code><br>
+                        (Gunakan token yang sama persis dengan yang ada di menu ini).
+                    </p>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700 space-y-1.5">
+                    <span class="w-5 h-5 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center text-[10px] font-black">3</span>
+                    <h6 class="font-bold text-white">Tes & Mulai Sinkronisasi</h6>
+                    <p class="text-[11px] text-slate-300 leading-relaxed">
+                        Masukkan URL hosting di atas, klik <strong>"Tes Koneksi"</strong>. Bila terhubung, klik <strong>"Sinkronkan Sekarang"</strong>. Setiap Anda update harga di kasir lokal, landing page online otomatis terupdate!
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
 
 </div>

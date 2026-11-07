@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BusinessSetting;
+use App\Models\ItemCategory;
 use App\Models\LandingFaq;
 use App\Models\LandingGallery;
 use App\Models\LandingInquiry;
@@ -11,6 +12,9 @@ use App\Models\LandingStatistic;
 use App\Models\LandingStory;
 use App\Models\LandingStoryComment;
 use App\Models\LandingTestimonial;
+use App\Models\ScrapItem;
+use App\Services\CloudSyncService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -37,6 +41,15 @@ class LandingPageAdminController extends Controller
         $statistics = LandingStatistic::orderBy('order')->get();
         $inquiries = LandingInquiry::latest()->take(50)->get();
 
+        $syncConfig = CloudSyncService::getConfig();
+        $syncCounts = [
+            'items' => ScrapItem::count(),
+            'categories' => ItemCategory::count(),
+            'stories' => $stories->count(),
+            'services' => $services->count(),
+            'galleries' => $galleries->count(),
+        ];
+
         return view('landing_admin.index', compact(
             'settings',
             'services',
@@ -45,7 +58,9 @@ class LandingPageAdminController extends Controller
             'testimonials',
             'faqs',
             'statistics',
-            'inquiries'
+            'inquiries',
+            'syncConfig',
+            'syncCounts'
         ));
     }
 
@@ -83,6 +98,9 @@ class LandingPageAdminController extends Controller
 
         // Handle Header Logo / Icon Upload
         $this->handleHeaderLogoUpload($request);
+
+        // Auto sync to cloud hosting if enabled
+        CloudSyncService::autoSyncIfEnabled();
 
         return redirect()->route('landing-admin.index', ['tab' => 'settings'])
             ->with('success', 'Logo & ikon header, identitas usaha, kontak, dan SEO berhasil disimpan.');
@@ -199,6 +217,9 @@ class LandingPageAdminController extends Controller
             BusinessSetting::set('landing_about_image', $request->input('landing_about_image'), 'landing_page');
         }
 
+        // Auto sync to cloud hosting if enabled
+        CloudSyncService::autoSyncIfEnabled();
+
         return redirect()->route('landing-admin.index', ['tab' => 'hero-about'])
             ->with('success', 'Konten Hero, Foto Showcase, dan Profil Tentang Kami berhasil diperbarui.');
     }
@@ -222,6 +243,8 @@ class LandingPageAdminController extends Controller
 
         LandingService::create($validated);
 
+        CloudSyncService::autoSyncIfEnabled();
+
         return redirect()->route('landing-admin.index', ['tab' => 'services'])
             ->with('success', 'Layanan baru berhasil ditambahkan.');
     }
@@ -232,6 +255,9 @@ class LandingPageAdminController extends Controller
     public function destroyService(LandingService $service): RedirectResponse
     {
         $service->delete();
+
+        CloudSyncService::autoSyncIfEnabled();
+
         return redirect()->route('landing-admin.index', ['tab' => 'services'])
             ->with('success', 'Layanan berhasil dihapus.');
     }
@@ -276,6 +302,8 @@ class LandingPageAdminController extends Controller
             'is_active' => true,
         ]);
 
+        CloudSyncService::autoSyncIfEnabled();
+
         return redirect()->route('landing-admin.index', ['tab' => 'gallery'])
             ->with('success', 'Foto galeri berhasil ditambahkan.');
     }
@@ -289,6 +317,8 @@ class LandingPageAdminController extends Controller
             @unlink(public_path($gallery->image_path));
         }
         $gallery->delete();
+
+        CloudSyncService::autoSyncIfEnabled();
 
         return redirect()->route('landing-admin.index', ['tab' => 'gallery'])
             ->with('success', 'Foto galeri berhasil dihapus.');
@@ -336,6 +366,8 @@ class LandingPageAdminController extends Controller
             'is_active' => true,
         ]);
 
+        CloudSyncService::autoSyncIfEnabled();
+
         return redirect()->route('landing-admin.index', ['tab' => 'stories'])
             ->with('success', 'Foto story baru berhasil ditambahkan! Foto ini langsung menjadi yang terdepan.');
     }
@@ -350,6 +382,8 @@ class LandingPageAdminController extends Controller
         }
         $story->delete();
 
+        CloudSyncService::autoSyncIfEnabled();
+
         return redirect()->route('landing-admin.index', ['tab' => 'stories'])
             ->with('success', 'Foto story berhasil dihapus.');
     }
@@ -360,6 +394,8 @@ class LandingPageAdminController extends Controller
     public function destroyStoryComment(LandingStoryComment $comment): RedirectResponse
     {
         $comment->delete();
+
+        CloudSyncService::autoSyncIfEnabled();
 
         return redirect()->route('landing-admin.index', ['tab' => 'stories'])
             ->with('success', 'Komentar story berhasil dihapus.');
@@ -458,8 +494,66 @@ class LandingPageAdminController extends Controller
     public function destroyStatistic(LandingStatistic $statistic): RedirectResponse
     {
         $statistic->delete();
+
+        CloudSyncService::autoSyncIfEnabled();
+
         return redirect()->route('landing-admin.index', ['tab' => 'statistics'])
             ->with('success', 'Statistik berhasil dihapus.');
+    }
+
+    /**
+     * Update Cloud Sync Configuration
+     */
+    public function updateSyncConfig(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'cloud_sync_url' => 'nullable|url|max:255',
+            'cloud_sync_secret_key' => 'nullable|string|max:100',
+        ]);
+
+        CloudSyncService::saveConfig([
+            'enabled' => $request->has('cloud_sync_enabled'),
+            'url' => $request->input('cloud_sync_url'),
+            'secret_key' => $request->input('cloud_sync_secret_key'),
+            'auto_sync' => $request->has('cloud_sync_auto_on_submit'),
+        ]);
+
+        return redirect()->route('landing-admin.index', ['tab' => 'cloud-sync'])
+            ->with('success', 'Pengaturan Cloud Sync hosting cPanel berhasil disimpan.');
+    }
+
+    /**
+     * Test Connection to Cloud Hosting
+     */
+    public function testCloudSync(Request $request): JsonResponse
+    {
+        $url = $request->input('url');
+        $secret = $request->input('secret_key');
+
+        $result = CloudSyncService::testConnection($url, $secret);
+
+        return response()->json($result);
+    }
+
+    /**
+     * Trigger Full Sync Now to Cloud Hosting
+     */
+    public function triggerSyncNow(Request $request)
+    {
+        $result = CloudSyncService::pushToCloud();
+
+        if ($request->wantsJson()) {
+            return response()->json($result);
+        }
+
+        if ($result['success']) {
+            return redirect()->route('landing-admin.index', ['tab' => 'cloud-sync'])
+                ->with('success', $result['message']);
+        }
+
+        return redirect()->route('landing-admin.index', ['tab' => 'cloud-sync'])
+            ->with('error', $result['message']);
+    }
     }
 }
 

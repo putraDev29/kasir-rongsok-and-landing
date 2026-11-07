@@ -330,6 +330,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/faqs/{faq}', [LandingPageAdminController::class, 'destroyFaq'])->name('faqs.destroy');
         Route::post('/statistics', [LandingPageAdminController::class, 'storeStatistic'])->name('statistics.store');
         Route::delete('/statistics/{statistic}', [LandingPageAdminController::class, 'destroyStatistic'])->name('statistics.destroy');
+        Route::post('/sync-config', [LandingPageAdminController::class, 'updateSyncConfig'])->name('sync.config');
+        Route::post('/sync-test', [LandingPageAdminController::class, 'testCloudSync'])->name('sync.test');
+        Route::post('/sync-now', [LandingPageAdminController::class, 'triggerSyncNow'])->name('sync.now');
     });
 
     // WhatsApp Gateway (WPPConnect Integration)

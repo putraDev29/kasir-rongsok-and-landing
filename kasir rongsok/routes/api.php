@@ -1,7 +1,18 @@
 <?php
 
+use App\Http\Controllers\Api\CloudSyncApiController;
 use App\Http\Controllers\Api\LandingPageApiController;
 use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Cloud Sync API (Local Depo -> cPanel Hosting Receiver)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('sync')->group(function () {
+    Route::match(['get', 'post'], '/ping', [CloudSyncApiController::class, 'ping'])->name('api.sync.ping');
+    Route::post('/receive', [CloudSyncApiController::class, 'receive'])->name('api.sync.receive');
+});
 
 /*
 |--------------------------------------------------------------------------
