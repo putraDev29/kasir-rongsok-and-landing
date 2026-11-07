@@ -33,10 +33,10 @@ export default function LocationSection({ location, settings }: LocationSectionP
             Lokasi & Akses
           </span>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
-            Kunjungi Depo Penimbangan Kami
+            Kunjungi Kantor & Fasilitas Penyimpanan Kami
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-            Lokasi strategis dengan akses jalan lebar untuk manuver truk, pick-up, maupun kendaraan pribadi. Timbangan digital siap melayani setiap hari.
+            Lokasi strategis di Jagakarsa Jakarta Selatan dengan akses mudah serta fasilitas penyimpanan aset yang luas, aman, dan memadai.
           </p>
         </motion.div>
 
@@ -53,7 +53,7 @@ export default function LocationSection({ location, settings }: LocationSectionP
               <div className="space-y-2 border-b border-slate-200 pb-5">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 text-sky-800 border border-sky-200 text-xs font-bold">
                   <MapPin className="w-3.5 h-3.5 text-sky-600" />
-                  Alamat Resmi Depo
+                  Alamat Kantor & Fasilitas Depo
                 </span>
                 <h3 className="text-lg sm:text-xl font-black text-slate-900">
                   {location.company_name}

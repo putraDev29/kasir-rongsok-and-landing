@@ -38,13 +38,13 @@ export default function ProcessSection({ steps, settings }: ProcessSectionProps)
           className="text-center max-w-2xl mx-auto space-y-3 mb-16"
         >
           <span className="text-xs font-bold uppercase tracking-widest text-sky-700">
-            Alur Transaksi Mudah
+            Alur Transaksi & Pelelangan
           </span>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
-            5 Langkah Mudah Jual Rongsokan Anda
+            5 Tahapan Pelelangan & Penjualan Aset
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-            Proses jual beli cepat, rapi, dan tanpa ribet. Anda bisa mengantar langsung ke depo atau meminta armada kami datang menjemput.
+            Sistem penjualan yang cepat, efisien, terbuka, dan obyektif dari survey awal, appraisal fisik, hingga terbentuk harga optimum dan aspek legalitas pasti.
           </p>
         </motion.div>
 

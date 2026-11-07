@@ -46,7 +46,7 @@ export default function WhyChooseUsSection({ items, settings }: WhyChooseUsSecti
             Mengapa Memilih {settings.company_name}?
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-            Standar transparansi tinggi dalam setiap gram dan rupiah. Kami memastikan Anda mendapatkan hasil timbangan terpercaya dan keuntungan maksimal.
+            Kunci utama kesuksesan lelang adalah harga yang sesuai kondisi pasar, kondisi fisik yang obyektif, aspek legalitas yang pasti, dan pemasaran yang efektif.
           </p>
         </motion.div>
 

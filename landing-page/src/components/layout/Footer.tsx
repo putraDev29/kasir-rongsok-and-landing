@@ -42,13 +42,13 @@ export default function Footer({ settings, categories }: FooterProps) {
                   {settings.company_name}
                 </span>
                 <span className="text-[10px] text-sky-700 font-bold uppercase tracking-wider">
-                  Seberaya Logam • Depo Besi Tua, Scrap & Bongkaran
+                  Lelang Aset Barang Tak Bergerak & Pengelolaan Aset
                 </span>
               </div>
             </div>
 
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-md">
-              {settings.company_tagline}. Melayani jual beli besi tua, scrap logam (tembaga, kuningan, aluminium, timah, nikel, karbait), bongkaran bangunan, dan jual beli tabung gas dengan timbangan digital akurat dan pembayaran kontan.
+              {settings.company_tagline}. Perusahaan yang bergerak di bidang lelang aset berupa barang tak bergerak, survey & appraisal fisik, fasilitas tempat penyimpanan aset yang luas, penjualan cepat, serta pengelolaan scrap logam dan bongkaran.
             </p>
 
             {/* Social Media Links */}

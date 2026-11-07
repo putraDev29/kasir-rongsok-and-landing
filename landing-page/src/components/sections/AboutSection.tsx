@@ -55,7 +55,7 @@ export default function AboutSection({ about, settings }: AboutSectionProps) {
                   <div className="text-xl font-black text-slate-900 font-mono">
                     {about.years_experience || settings.about_years_experience || "3+"} Tahun
                   </div>
-                  <p className="text-xs text-slate-600 font-medium">Pengalaman Pengelolaan & Daur Ulang Logam</p>
+                  <p className="text-xs text-slate-600 font-medium">Pengalaman Lelang & Pengelolaan Aset</p>
                 </div>
               </div>
             </div>
@@ -121,14 +121,14 @@ export default function AboutSection({ about, settings }: AboutSectionProps) {
                 className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-xs shadow-md shadow-sky-500/20 transition-all hover:scale-105"
               >
                 <MessageCircle className="w-4 h-4 fill-white" />
-                <span>Konsultasikan Rongsokan Anda</span>
+                <span>Konsultasikan Kebutuhan Aset Anda</span>
               </a>
 
               <a
                 href="#location"
                 className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-sky-200 text-slate-700 hover:text-sky-700 hover:bg-sky-50/50 text-xs font-semibold transition"
               >
-                <span>Lihat Alamat Depo & Gudang</span>
+                <span>Lihat Alamat Kantor & Lokasi Depo</span>
               </a>
             </div>
           </motion.div>

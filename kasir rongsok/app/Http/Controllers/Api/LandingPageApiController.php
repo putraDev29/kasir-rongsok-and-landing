@@ -46,66 +46,66 @@ class LandingPageApiController extends Controller
 
         $whyChooseUs = [
             [
-                'icon' => 'Scale',
-                'title' => 'Timbangan Digital Presisi',
-                'description' => 'Didukung timbangan digital bersertifikasi tera metrologi dengan display ganda yang transparan dan dapat dipantau langsung.',
+                'icon' => 'ShieldCheck',
+                'title' => 'Pelayanan Terbaik & Terpercaya',
+                'description' => 'Didukung Sumber Daya Manusia yang handal dan berkompeten dalam bidangnya serta komitmen memberikan pelayanan terbaik bagi pengguna jasa lelang.',
             ],
             [
                 'icon' => 'TrendingUp',
-                'title' => 'Harga Pasar Tertinggi',
-                'description' => 'Kami selalu memperbarui acuan harga secara real-time mengikuti perkembangan pasar industri peleburan nasional.',
+                'title' => 'Harga Optimum Sesuai Pasar',
+                'description' => 'Kunci utama kesuksesan lelang adalah harga yang sesuai dengan kondisi pasar, kondisi fisik, dan program pemasaran yang efektif.',
             ],
             [
-                'icon' => 'Banknote',
-                'title' => 'Pembayaran Instan di Tempat',
-                'description' => 'Uang hasil timbangan langsung dibayarkan tunai kontan atau transfer bank instan seketika tanpa tunda.',
+                'icon' => 'Scale',
+                'title' => 'Aspek Legalitas yang Pasti',
+                'description' => 'Sistem penjualan lelang kami cepat, efisien, terbuka, obyektif, terbentuk harga optimum dan didukung aspek legalitas yang pasti.',
             ],
             [
                 'icon' => 'Truck',
-                'title' => 'Layanan Jemput Armada',
-                'description' => 'Armada pick-up dan truk siap menjemput rongsok ke gudang, pabrik, atau proyek Anda untuk partai sedang hingga besar.',
+                'title' => 'Tempat Penyimpanan Aset yang Luas',
+                'description' => 'Memiliki fasilitas area dan tempat penyimpanan aset yang luas dan aman untuk menampung berbagai aset sebelum maupun sesudah lelang.',
             ],
             [
                 'icon' => 'Users',
-                'title' => 'Terima Partai Kecil & Besar',
-                'description' => 'Kami menyambut hangat semua kalangan, mulai dari pengepul keliling, bengkel rumahan, hingga scrap pabrik ribuan ton.',
+                'title' => 'Database Calon Pembeli Aktif',
+                'description' => 'Memiliki database calon pembeli dan investor aktif yang siap mengikuti dan menunggu jadwal lelang kami secara berkala.',
             ],
             [
-                'icon' => 'ShieldCheck',
-                'title' => 'Legalitas & Pengalaman 3+ Tahun',
-                'description' => 'Pengalaman mengelola limbah daur ulang secara profesional, berlisensi, dan ramah kelestarian lingkungan.',
+                'icon' => 'Banknote',
+                'title' => 'Penjualan Cepat & Tepat Waktu',
+                'description' => 'Kemampuan menjual dalam waktu yang singkat dengan cara seefisien mungkin dan tepat waktu sesuai kebutuhan mitra bisnis.',
             ],
         ];
 
         $processSteps = [
             [
                 'step' => 1,
-                'title' => 'Hubungi via WhatsApp / Telepon',
-                'description' => 'Informasikan jenis material rongsok dan perkiraan kuantitas barang yang ingin Anda jual.',
+                'title' => 'Konsultasi & Pengajuan Aset',
+                'description' => 'Hubungi tim kami via WhatsApp/Telepon untuk menginformasikan obyek aset tak bergerak atau material yang ingin dilelang/dijual.',
                 'icon' => 'PhoneCall',
             ],
             [
                 'step' => 2,
-                'title' => 'Cek & Negosiasi Harga',
-                'description' => 'Dapatkan estimasi penawaran harga terbaik harian atau diskusikan jadwal penjemputan armada.',
-                'icon' => 'MessageSquareQuote',
-            ],
-            [
-                'step' => 3,
-                'title' => 'Penjemputan / Antar ke Depo',
-                'description' => 'Bawa barang ke depo penimbangan kami atau tunggu armada kami tiba di lokasi Anda.',
-                'icon' => 'Truck',
-            ],
-            [
-                'step' => 4,
-                'title' => 'Penimbangan Digital Transparan',
-                'description' => 'Material disortir dan ditimbang secara terbuka menggunakan timbangan digital presisi tinggi.',
+                'title' => 'Survey Awal & Appraisal Fisik',
+                'description' => 'Pelaksanaan survey awal, penilaian (appraisal) singkat dan penelitian atas kondisi fisiknya secara detail di lapangan.',
                 'icon' => 'Scale',
             ],
             [
+                'step' => 3,
+                'title' => 'Penetapan Harga & Strategi Marketing',
+                'description' => 'Menetapkan nilai harga yang optimum sesuai pasar dan mempersiapkan program pemasaran lelang yang efektif.',
+                'icon' => 'MessageSquareQuote',
+            ],
+            [
+                'step' => 4,
+                'title' => 'Pelaksanaan Lelang Terbuka',
+                'description' => 'Pelaksanaan penjualan melalui sistem lelang yang cepat, efisien, terbuka, dan mempertemukan dengan database pembeli aktif.',
+                'icon' => 'Truck',
+            ],
+            [
                 'step' => 5,
-                'title' => 'Pelunasan Bayar Langsung',
-                'description' => 'Total transaksi dihitung otomatis oleh sistem POS kasir dan dibayar lunas tunai atau transfer seketika.',
+                'title' => 'Penyelesaian Transaksi & Legalitas',
+                'description' => 'Penyelesaian pembayaran optimum, aspek legalitas yang pasti, dan serah terima aset secara profesional.',
                 'icon' => 'Wallet',
             ],
         ];

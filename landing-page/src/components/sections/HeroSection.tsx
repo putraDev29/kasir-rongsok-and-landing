@@ -65,15 +65,15 @@ export default function HeroSection({ hero, settings, stories }: HeroSectionProp
           <div className="space-y-0.5 sm:space-y-1">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-sky-100/90 border border-sky-200 text-sky-800 text-[10px] sm:text-[11px] font-bold tracking-wide">
               <span className="w-1.5 h-1.5 rounded-full bg-sky-600 animate-pulse" />
-              <span>{settings.company_name} • Seberaya Logam</span>
+              <span>{hero.badge || settings.hero_badge || `${settings.company_name} • Lelang Aset & Pengelolaan Aset`}</span>
             </div>
 
             <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-[32px] font-extrabold text-slate-900 tracking-tight leading-snug">
-              Pusat Jual Beli Besi Tua, Scrap Logam & Bongkaran
+              {hero.headline || settings.hero_headline || "Lelang Aset Barang Tak Bergerak & Pengelolaan Aset Terpercaya"}
             </h1>
 
             <p className="text-[11px] sm:text-xs md:text-sm text-slate-600 font-normal leading-relaxed line-clamp-1 max-w-2xl">
-              Menerima besi tua, tembaga, kuningan, aluminium, timah, nikel, tabung gas & bongkaran gedung. Timbangan digital presisi & pelunasan tunai di tempat.
+              {hero.subheadline || settings.hero_subheadline || "PT. Seberaya Akses Multi melayani lelang aset barang tak bergerak, survey & appraisal obyektif, penyimpanan aset luas, dan penjualan cepat dengan kepastian legalitas."}
             </p>
           </div>
 

@@ -82,10 +82,10 @@ export default function ContactSection({ settings }: ContactSectionProps) {
             Hubungi Kami
           </span>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
-            Konsultasikan Penjualan & Jemput Rongsok
+            Konsultasikan Kebutuhan Lelang & Penjualan Aset
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-            Kirimkan informasi jenis material dan perkiraan tonase barang Anda. Tim admin kami akan segera memberikan penawaran harga terbaik.
+            Besar harapan kami untuk diberikan kesempatan kerjasama dengan Anda untuk membantu penjualan aset perusahaan atau pribadi melalui sistem lelang terpercaya.
           </p>
         </motion.div>
 
@@ -153,7 +153,7 @@ export default function ContactSection({ settings }: ContactSectionProps) {
                     <MapPin className="w-5 h-5 text-sky-600" />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 font-bold uppercase">Alamat Depo</span>
+                    <span className="text-[10px] text-slate-500 font-bold uppercase">Alamat Kantor & Depo</span>
                     <p className="font-bold text-slate-900 leading-snug">{settings.company_address}</p>
                   </div>
                 </div>

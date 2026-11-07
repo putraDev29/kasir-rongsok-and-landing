@@ -40,13 +40,13 @@ export default function ServicesSection({ services, settings }: ServicesSectionP
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-3 mb-14">
           <span className="text-xs font-bold uppercase tracking-widest text-sky-700">
-            Layanan Unggulan
+            Layanan Kami
           </span>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
-            Layanan Pengumpulan & Pembelian Rongsokan Profesional
+            Layanan Lelang Aset & Pengelolaan Profesional
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-            Menerima berbagai jenis komoditas limbah industri, toko, bengkel, dan rumah tangga dengan timbangan bersertifikasi dan pembayaran instan tanpa potongan tersembunyi.
+            Menyediakan sistem pelelangan aset barang tak bergerak, survey & appraisal fisik, fasilitas penyimpanan aset yang luas, database pembeli aktif, serta pengelolaan scrap logam dan bongkaran.
           </p>
         </div>
 
