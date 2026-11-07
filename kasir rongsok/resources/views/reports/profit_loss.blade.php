@@ -26,23 +26,23 @@
             <div class="flex items-center gap-1.5 font-medium">
                 <span class="text-slate-400">Pilihan Cepat:</span>
                 <a href="{{ route('reports.profit-loss') }}" 
+                   class="px-2.5 py-1 rounded-md transition-colors {{ (!$allDates && $startDate === date('Y-m-01') && $endDate === date('Y-m-t')) ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                    Bulan Ini (1 - {{ date('t M Y') }})
+                </a>
+                <a href="{{ route('reports.profit-loss', ['start_date' => date('Y-m-d'), 'end_date' => date('Y-m-d')]) }}" 
                    class="px-2.5 py-1 rounded-md transition-colors {{ (!$allDates && $startDate === date('Y-m-d') && $endDate === date('Y-m-d')) ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
-                    Hari Ini (Saat Ini)
+                    Hari Ini
                 </a>
                 <a href="{{ route('reports.profit-loss', ['start_date' => date('Y-m-d', strtotime('-1 day')), 'end_date' => date('Y-m-d', strtotime('-1 day'))]) }}" 
                    class="px-2.5 py-1 rounded-md transition-colors {{ ($startDate === date('Y-m-d', strtotime('-1 day')) && $endDate === date('Y-m-d', strtotime('-1 day'))) ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
                     Kemarin
-                </a>
-                <a href="{{ route('reports.profit-loss', ['start_date' => date('Y-m-01'), 'end_date' => date('Y-m-d')]) }}" 
-                   class="px-2.5 py-1 rounded-md transition-colors {{ ($startDate === date('Y-m-01') && $endDate === date('Y-m-d')) ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
-                    Bulan Ini
                 </a>
                 <a href="{{ route('reports.profit-loss', ['all_dates' => 1]) }}" 
                    class="px-2.5 py-1 rounded-md transition-colors {{ $allDates ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
                     Semua Periode
                 </a>
             </div>
-            <span class="text-[11px] text-slate-400">Diambil sesuai tanggal saat itu (Hari Ini)</span>
+            <span class="text-[11px] text-slate-400">Default: 1 Bulan Penuh (Tgl 1 s/d Akhir Bulan)</span>
         </div>
 
         <form method="GET" action="{{ route('reports.profit-loss') }}" class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
@@ -159,7 +159,7 @@
                     <span class="font-mono text-sm">Rp {{ number_format($totalSales, 0, ',', '.') }}</span>
                 </div>
                 <div class="flex justify-between text-xs text-slate-600 pl-4">
-                    <span>Penjualan Barang Rongsokan Partai Grosir / Kirim ke Pabrik ({{ number_format($totalSalesWeight, 1) }} kg)</span>
+                    <span>Penjualan Material Scrap & Daur Ulang Partai Grosir / Kirim ke Pabrik ({{ number_format($totalSalesWeight, 1) }} kg)</span>
                     <span class="font-mono font-medium">Rp {{ number_format($totalSales, 0, ',', '.') }}</span>
                 </div>
                 @if($totalSales == 0)
@@ -176,7 +176,7 @@
                     <span class="font-mono text-sm text-red-600">(Rp {{ number_format($totalCogs, 0, ',', '.') }})</span>
                 </div>
                 <div class="flex justify-between text-xs text-slate-600 pl-4">
-                    <span>Biaya Perolehan Barang Rongsok yang Terjual</span>
+                    <span>Biaya Perolehan Material Scrap & Daur Ulang yang Terjual</span>
                     <span class="font-mono font-medium">Rp {{ number_format($totalCogs, 0, ',', '.') }}</span>
                 </div>
             </div>
@@ -283,7 +283,7 @@
                                     {{ $inItem->item_name }}
                                     <div class="text-[10px] text-slate-400 font-mono">Beli: @ Rp {{ number_format($inItem->avg_buy_price, 0, ',', '.') }}</div>
                                 </td>
-                                <td class="py-2.5 px-2 text-right font-mono font-bold text-slate-800">{{ number_format($inItem->total_weight, 2) }}</td>
+                                <td class="py-2.5 px-2 text-right font-mono font-bold text-slate-800">{{ \App\Services\FormatHelper::weight($inItem->total_weight) }}</td>
                                 <td class="py-2.5 px-2 text-right font-mono text-slate-700">Rp {{ number_format($inItem->total_amount, 0, ',', '.') }}</td>
                                 <td class="py-2.5 px-2 text-right font-mono text-blue-700">Rp {{ number_format($inItem->estimated_sales_value, 0, ',', '.') }}</td>
                                 <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-600">+Rp {{ number_format($itemMargin, 0, ',', '.') }}</td>
@@ -297,7 +297,7 @@
                     <tfoot class="bg-slate-50 font-bold border-t border-slate-200">
                         <tr>
                             <td class="py-2.5 px-3 text-slate-800">TOTAL STOK MASUK</td>
-                            <td class="py-2.5 px-2 text-right font-mono text-blue-700">{{ number_format($totalPurchasesWeight, 2) }} kg</td>
+                            <td class="py-2.5 px-2 text-right font-mono text-blue-700">{{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg</td>
                             <td class="py-2.5 px-2 text-right font-mono text-slate-900">Rp {{ number_format($totalPurchases, 0, ',', '.') }}</td>
                             <td class="py-2.5 px-2 text-right font-mono text-blue-800">Rp {{ number_format($totalEstimatedInventorySales, 0, ',', '.') }}</td>
                             <td class="py-2.5 px-3 text-right font-mono text-emerald-700">+Rp {{ number_format($totalPotentialInventoryProfit, 0, ',', '.') }}</td>
@@ -320,7 +320,7 @@
                     </div>
                 </div>
                 <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-mono text-xs font-bold">
-                    {{ number_format($totalSalesWeight, 1) }} kg
+                    {{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg
                 </span>
             </div>
 
@@ -338,7 +338,7 @@
                         @forelse($outgoingItems as $outItem)
                             <tr class="hover:bg-slate-50/80">
                                 <td class="py-2.5 px-3 font-medium text-slate-900">{{ $outItem->item_name }}</td>
-                                <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-800">{{ number_format($outItem->total_weight, 2) }} kg</td>
+                                <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-800">{{ \App\Services\FormatHelper::weight($outItem->total_weight) }} kg</td>
                                 <td class="py-2.5 px-3 text-right font-mono text-slate-700">Rp {{ number_format($outItem->total_amount, 0, ',', '.') }}</td>
                                 <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-600">Rp {{ number_format($outItem->total_profit, 0, ',', '.') }}</td>
                             </tr>
@@ -351,7 +351,7 @@
                     <tfoot class="bg-slate-50 font-bold border-t border-slate-200">
                         <tr>
                             <td class="py-2.5 px-3 text-slate-800">TOTAL PENJUALAN</td>
-                            <td class="py-2.5 px-3 text-right font-mono text-emerald-700">{{ number_format($totalSalesWeight, 2) }} kg</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-emerald-700">{{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg</td>
                             <td class="py-2.5 px-3 text-right font-mono text-slate-900">Rp {{ number_format($totalSales, 0, ',', '.') }}</td>
                             <td class="py-2.5 px-3 text-right font-mono text-emerald-700">Rp {{ number_format($grossProfit, 0, ',', '.') }}</td>
                         </tr>

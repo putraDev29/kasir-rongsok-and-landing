@@ -25,6 +25,7 @@ class SettingController extends Controller
             'app_name' => 'required|string|max:100',
             'app_subtitle' => 'nullable|string|max:150',
             'company_name' => 'required|string|max:150',
+            'commodity_term' => 'nullable|string|max:100',
             'company_tagline' => 'nullable|string|max:255',
             'company_phone' => 'nullable|string|max:50',
             'company_address' => 'nullable|string|max:300',
@@ -39,6 +40,8 @@ class SettingController extends Controller
             'default_printer_type' => 'required|in:thermal_58,thermal_80,a4',
             'app_logo' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
             'remove_logo' => 'nullable|boolean',
+            'owner_signature' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'remove_signature' => 'nullable|boolean',
         ]);
 
         // 1. Handle Logo Upload or Removal
@@ -152,11 +155,64 @@ class SettingController extends Controller
             return back()->withInput()->with('error', 'Gagal menyimpan file logo: ' . $e->getMessage() . '. Pastikan folder uploads/logo memiliki izin tulis (chmod 755 / 775).');
         }
 
-        // 2. Save text settings
+        // 2. Handle Owner Signature Upload or Removal
+        try {
+            if ($request->hasFile('owner_signature')) {
+                $file = $request->file('owner_signature');
+                $extension = $file->getClientOriginalExtension() ?: 'png';
+                $filename = 'signature_' . time() . '.' . $extension;
+
+                $destinationPath = public_path('uploads/signature');
+                if (!file_exists($destinationPath)) {
+                    @mkdir($destinationPath, 0775, true);
+                }
+
+                // Remove previous signature if exists
+                $oldSig = BusinessSetting::get('owner_signature');
+                if ($oldSig) {
+                    if (file_exists(public_path($oldSig))) {
+                        @unlink(public_path($oldSig));
+                    }
+                    if (file_exists(base_path('../' . $oldSig))) {
+                        @unlink(base_path('../' . $oldSig));
+                    }
+                    if (file_exists(base_path('public/' . $oldSig))) {
+                        @unlink(base_path('public/' . $oldSig));
+                    }
+                }
+
+                $file->move($destinationPath, $filename);
+
+                // Normalisasi dimensi gambar tanda tangan agar pas dengan area tanda tangan dokumen (maks 600x300)
+                $this->normalizeSignatureImage($destinationPath . DIRECTORY_SEPARATOR . $filename);
+
+                // Mirror if parent uploads directory exists
+                if (file_exists(base_path('../uploads')) && is_dir(base_path('../uploads'))) {
+                    $parentUploadPath = realpath(base_path('../uploads')) . DIRECTORY_SEPARATOR . 'signature';
+                    if (!file_exists($parentUploadPath)) {
+                        @mkdir($parentUploadPath, 0775, true);
+                    }
+                    @copy($destinationPath . DIRECTORY_SEPARATOR . $filename, $parentUploadPath . DIRECTORY_SEPARATOR . $filename);
+                }
+
+                BusinessSetting::set('owner_signature', 'uploads/signature/' . $filename, 'branding');
+            }
+            // Signature is retained permanently and only replaced if a new file is uploaded
+        } catch (Throwable $e) {
+            Log::error('Gagal mengunggah tanda tangan owner: ' . $e->getMessage(), [
+                'exception' => $e,
+                'public_path' => public_path(),
+            ]);
+
+            return back()->withInput()->with('error', 'Gagal menyimpan file tanda tangan: ' . $e->getMessage() . '. Pastikan folder uploads/signature memiliki izin tulis.');
+        }
+
+        // 3. Save text settings
         $fieldsToSave = [
             'app_name',
             'app_subtitle',
             'company_name',
+            'commodity_term',
             'company_tagline',
             'company_phone',
             'company_address',
@@ -183,5 +239,77 @@ class SettingController extends Controller
         );
 
         return back()->with('success', 'Pengaturan usaha, identitas header/sidebar, dan logo berhasil diperbarui.');
+    }
+
+    /**
+     * Normalisasi ukuran tanda tangan agar proporsional dan tidak meledak di dokumen cetak/PDF.
+     * Maksimal batas bounding box: 600px x 300px dengan mempertahankan transparansi PNG/WebP.
+     */
+    protected function normalizeSignatureImage(string $filePath): void
+    {
+        if (!extension_loaded('gd') || !file_exists($filePath)) {
+            return;
+        }
+
+        $imageInfo = @getimagesize($filePath);
+        if (!$imageInfo) {
+            return;
+        }
+
+        [$origW, $origH, $type] = $imageInfo;
+        $maxW = 600;
+        $maxH = 300;
+
+        if ($origW <= $maxW && $origH <= $maxH) {
+            return;
+        }
+
+        $ratio = min($maxW / $origW, $maxH / $origH);
+        $newW = (int) round($origW * $ratio);
+        $newH = (int) round($origH * $ratio);
+
+        $srcImg = null;
+        switch ($type) {
+            case IMAGETYPE_PNG:
+                $srcImg = @imagecreatefrompng($filePath);
+                break;
+            case IMAGETYPE_JPEG:
+                $srcImg = @imagecreatefromjpeg($filePath);
+                break;
+            case IMAGETYPE_WEBP:
+                if (function_exists('imagecreatefromwebp')) {
+                    $srcImg = @imagecreatefromwebp($filePath);
+                }
+                break;
+        }
+
+        if (!$srcImg) {
+            return;
+        }
+
+        $dstImg = imagecreatetruecolor($newW, $newH);
+        imagealphablending($dstImg, false);
+        imagesavealpha($dstImg, true);
+        $transparent = imagecolorallocatealpha($dstImg, 255, 255, 255, 127);
+        imagefilledrectangle($dstImg, 0, 0, $newW, $newH, $transparent);
+
+        imagecopyresampled($dstImg, $srcImg, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
+
+        switch ($type) {
+            case IMAGETYPE_PNG:
+                imagepng($dstImg, $filePath, 8);
+                break;
+            case IMAGETYPE_JPEG:
+                imagejpeg($dstImg, $filePath, 90);
+                break;
+            case IMAGETYPE_WEBP:
+                if (function_exists('imagewebp')) {
+                    imagewebp($dstImg, $filePath, 90);
+                }
+                break;
+        }
+
+        imagedestroy($srcImg);
+        imagedestroy($dstImg);
     }
 }

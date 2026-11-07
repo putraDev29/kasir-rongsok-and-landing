@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSalesRequest;
 use App\Models\BusinessSetting;
+use App\Models\Driver;
 use App\Models\PaymentMethod;
 use App\Models\SalesTransaction;
 use App\Models\ScrapItem;
@@ -59,13 +60,20 @@ class SalesTransactionController extends Controller
 
     public function create(Request $request): View
     {
-        $scrapItems = ScrapItem::with('stockBalance')
+        $rawItems = ScrapItem::with(['stockBalance', 'priceStocks', 'category'])
             ->where('is_active', true)
             ->whereHas('stockBalance', function ($q) {
                 $q->where('current_stock', '>', 0);
             })
             ->orderBy('name')
             ->get();
+
+        $scrapItems = [];
+        foreach ($rawItems as $item) {
+            foreach ($item->getPriceTierOptions(onlyWithStock: false) as $opt) {
+                $scrapItems[] = $opt;
+            }
+        }
 
         $paymentMethods = PaymentMethod::where('is_active', true)->get();
 
@@ -80,7 +88,9 @@ class SalesTransactionController extends Controller
             ->take(20)
             ->get();
 
-        return view('sales.create', compact('scrapItems', 'paymentMethods', 'selectedDeliveryOrder', 'unbilledDeliveryOrders'));
+        $drivers = Driver::where('is_active', true)->orderBy('name')->get();
+
+        return view('sales.create', compact('scrapItems', 'paymentMethods', 'selectedDeliveryOrder', 'unbilledDeliveryOrders', 'drivers'));
     }
 
     public function store(StoreSalesRequest $request): RedirectResponse
@@ -94,6 +104,7 @@ class SalesTransactionController extends Controller
             return redirect()->route('sales.show', $transaction)
                 ->with('success', "Penjualan rongsok {$transaction->invoice_number} berhasil dicatat!");
         } catch (Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Sales store failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             return back()->withInput()->with('error', $e->getMessage());
         }
     }
@@ -114,7 +125,7 @@ class SalesTransactionController extends Controller
         return view('sales.print', compact('sale', 'settings'));
     }
 
-    public function pdfInvoice(SalesTransaction $sale)
+    public function pdfInvoice(Request $request, SalesTransaction $sale)
     {
         $sale->load(['items.scrapItem', 'user', 'paymentMethod']);
         $settings = BusinessSetting::pluck('value', 'key')->all();
@@ -122,7 +133,12 @@ class SalesTransactionController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('sales.invoice_pdf', compact('sale', 'settings'))
             ->setPaper('a5', 'portrait');
 
-        $filename = "Faktur_{$sale->invoice_number}.pdf";
+        $filename = "Invoice_{$sale->invoice_number}.pdf";
+
+        if ($request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+
         return $pdf->stream($filename);
     }
 
@@ -140,6 +156,30 @@ class SalesTransactionController extends Controller
         } catch (Exception $e) {
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Mark sales delivery as completed.
+     */
+    public function markDelivered(Request $request, SalesTransaction $sale): RedirectResponse
+    {
+        if ($sale->isCancelled()) {
+            return back()->with('error', 'Transaksi yang dibatalkan tidak dapat diselesaikan pengirimannya.');
+        }
+
+        $sale->update(['status' => SalesTransaction::STATUS_COMPLETED]);
+
+        if ($sale->deliveryOrder) {
+            $sale->deliveryOrder->update(['status' => 'delivered']);
+        }
+
+        \App\Models\ActivityLog::record(
+            action: 'sale_delivery_completed',
+            subject: $sale,
+            description: "Pengiriman transaksi penjualan {$sale->invoice_number} ke {$sale->buyer_name} berhasil diselesaikan."
+        );
+
+        return back()->with('success', "Pengiriman penjualan {$sale->invoice_number} berhasil dikonfirmasi selesai! Status transaksi resmi SELESAI.");
     }
 
     /**
@@ -263,7 +303,13 @@ class SalesTransactionController extends Controller
             ->setPaper('a4', 'portrait');
 
         $dateSuffix = ($startDate && $endDate) ? "{$startDate}_sd_{$endDate}" : date('Ymd_His');
-        return $pdf->download("Rekap_Penjualan_Partai_{$dateSuffix}.pdf");
+        $filename = "Rekap_Penjualan_Partai_{$dateSuffix}.pdf";
+
+        if ($request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
     }
 
     /**

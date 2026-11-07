@@ -4,6 +4,9 @@ namespace App\Services;
 
 use App\Models\ActivityLog;
 use App\Models\Debt;
+use App\Models\ItemCategory;
+use App\Models\ItemPriceStock;
+use App\Models\PaymentMethod;
 use App\Models\PurchaseTransaction;
 use App\Models\PurchaseTransactionItem;
 use App\Models\ScrapItem;
@@ -34,9 +37,15 @@ class PurchaseTransactionService
             if ($supplierId === '__new__' || $supplierId === '__cash__' || empty($supplierId)) {
                 $supplierId = null;
             }
+            $supplier = null;
             $supplierName = $data['supplier_name'] ?? null;
             $supplierPhone = $data['supplier_phone'] ?? null;
             $supplierAddress = $data['supplier_address'] ?? null;
+
+            // Bank details extracted early for supplier / user bank account synchronization (Task 10)
+            $customBank = trim($data['custom_bank'] ?? '');
+            $customAccountName = trim($data['custom_account_name'] ?? '');
+            $customAccountNo = trim($data['custom_account_no'] ?? '');
 
             if ($supplierId) {
                 $supplier = Supplier::find($supplierId);
@@ -54,18 +63,43 @@ class PurchaseTransactionService
                         'name' => $trimmedName,
                         'phone' => $supplierPhone,
                         'address' => $supplierAddress,
+                        'bank_name' => $customBank ?: null,
+                        'bank_account_number' => $customAccountNo ?: null,
+                        'bank_account_name' => $customAccountName ?: null,
                     ]);
                 }
                 $supplierId = $supplier->id;
                 $supplierName = $supplier->name;
             } else {
-                $supplierName = $supplierName ?: 'Umum / Tunai';
+                $supplierName = !empty($supplierName) ? trim($supplierName) : null;
+            }
+
+            // Sync bank account to Supplier if provided and requested
+            if ($supplier) {
+                $hasBankInput = !empty($customBank) || !empty($customAccountNo) || !empty($customAccountName);
+                $shouldSaveToSupplier = !empty($data['save_to_supplier_bank']) || (empty($supplier->bank_account_number) && !empty($customAccountNo));
+                if ($hasBankInput && $shouldSaveToSupplier) {
+                    $supplier->update(array_filter([
+                        'bank_name' => $customBank ?: $supplier->bank_name,
+                        'bank_account_number' => $customAccountNo ?: $supplier->bank_account_number,
+                        'bank_account_name' => $customAccountName ?: $supplier->bank_account_name,
+                    ], fn($val) => !is_null($val) && $val !== ''));
+                }
+            }
+
+            // Sync bank account to current Cashier/Operator User profile if requested
+            if (!empty($data['save_to_user_bank']) && (!empty($customBank) || !empty($customAccountNo) || !empty($customAccountName))) {
+                $user->update(array_filter([
+                    'bank_name' => $customBank ?: $user->bank_name,
+                    'bank_account_number' => $customAccountNo ?: $user->bank_account_number,
+                    'bank_account_name' => $customAccountName ?: $user->bank_account_name,
+                ], fn($val) => !is_null($val) && $val !== ''));
             }
 
             // Calculate items & totals safely on backend
             $itemsData = $data['items'] ?? [];
             if (empty($itemsData)) {
-                throw new Exception('Transaksi harus memiliki minimal 1 barang rongsok.');
+                throw new Exception('Transaksi harus memiliki minimal 1 material scrap & daur ulang.');
             }
 
             $totalGrossWeight = 0;
@@ -73,13 +107,101 @@ class PurchaseTransactionService
             $totalNetWeight = 0;
             $subtotalAmount = 0;
 
-            $processedItems = [];
+            $consolidatedItems = [];
 
             foreach ($itemsData as $row) {
-                $scrapItemId = $row['scrap_item_id'];
-                $scrapItem = ScrapItem::lockForUpdate()->findOrFail($scrapItemId);
+                $scrapItemId = $row['scrap_item_id'] ?? null;
+                $newItemName = trim($row['new_item_name'] ?? $row['search_text'] ?? $row['name'] ?? '');
+                $isNewlyCreated = false;
 
-                $unitType = strtolower($row['unit_type'] ?? ($scrapItem->unit_type ?? 'kg'));
+                if ($scrapItemId === '__new__' || (empty($scrapItemId) && !empty($newItemName)) || (!is_numeric($scrapItemId) && !empty($newItemName))) {
+                    // Check if an item with this name already exists in ScrapItem master
+                    $scrapItem = ScrapItem::withTrashed()->where('name', $newItemName)->first();
+
+                    if ($scrapItem) {
+                        if ($scrapItem->trashed()) {
+                            $scrapItem->restore();
+                        }
+                        if (!$scrapItem->is_active) {
+                            $scrapItem->update(['is_active' => true]);
+                        }
+                    } else {
+                        $enteredPrice = isset($row['price_per_kg']) && is_numeric($row['price_per_kg'])
+                            ? (float) $row['price_per_kg']
+                            : 0;
+
+                        $unitType = strtolower($row['unit_type'] ?? 'kg');
+                        if (!in_array($unitType, ['kg', 'pcs', 'satuan', 'unit'])) {
+                            $unitType = 'kg';
+                        }
+
+                        $categoryId = null;
+                        $newCategoryName = trim($row['new_category_name'] ?? '');
+
+                        if (($row['category_id'] ?? null) === '__new__' || !empty($newCategoryName)) {
+                            $targetCatName = !empty($newCategoryName) ? $newCategoryName : 'Kategori Baru';
+                            $category = ItemCategory::where('name', $targetCatName)->first();
+                            if (!$category) {
+                                $slug = \Illuminate\Support\Str::slug($targetCatName);
+                                $baseSlug = $slug ?: 'kategori';
+                                $slug = $baseSlug;
+                                $counter = 1;
+                                while (ItemCategory::where('slug', $slug)->exists()) {
+                                    $slug = "{$baseSlug}-{$counter}";
+                                    $counter++;
+                                }
+
+                                $category = ItemCategory::create([
+                                    'name' => $targetCatName,
+                                    'slug' => $slug,
+                                    'description' => 'Kategori otomatis dibuat dari kasir timbang',
+                                    'is_active' => true,
+                                ]);
+                            }
+                            $categoryId = $category->id;
+                        } elseif (!empty($row['category_id']) && is_numeric($row['category_id'])) {
+                            $categoryId = (int) $row['category_id'];
+                        }
+
+                        $code = 'BRG-' . strtoupper(substr(uniqid(), -5));
+                        while (ScrapItem::where('code', $code)->exists()) {
+                            $code = 'BRG-' . strtoupper(substr(uniqid(), -5));
+                        }
+
+                        $scrapItem = ScrapItem::create([
+                            'code' => $code,
+                            'name' => $newItemName,
+                            'category_id' => $categoryId,
+                            'unit' => $unitType,
+                            'buy_price_per_kg' => $enteredPrice,
+                            'sell_price_per_kg' => 0,
+                            'min_stock_alert' => 0,
+                            'is_active' => true,
+                        ]);
+
+                        StockBalance::firstOrCreate(
+                            ['scrap_item_id' => $scrapItem->id],
+                            [
+                                'current_stock' => 0,
+                                'total_in' => 0,
+                                'total_out' => 0,
+                                'average_buy_price' => $enteredPrice,
+                            ]
+                        );
+
+                        ActivityLog::record(
+                            action: 'scrap_item_created_from_purchase',
+                            subject: $scrapItem,
+                            description: "Menambahkan jenis barang baru '{$scrapItem->name}' ({$scrapItem->code}) langsung saat transaksi pembelian"
+                        );
+
+                        $isNewlyCreated = true;
+                    }
+                } else {
+                    $scrapItem = ScrapItem::lockForUpdate()->findOrFail($scrapItemId);
+                }
+
+                $unitType = strtolower($row['unit_type'] ?? ($scrapItem->unit ?? 'kg'));
                 if (!in_array($unitType, ['kg', 'pcs', 'satuan', 'unit'])) {
                     $unitType = 'kg';
                 }
@@ -99,8 +221,10 @@ class PurchaseTransactionService
                         : (float) $scrapItem->buy_price_per_kg;
 
                     $masterBuyPrice = (float) $scrapItem->buy_price_per_kg;
-                    if ($masterBuyPrice > 0 && $pricePerUnit > $masterBuyPrice) {
-                        throw new Exception("Harga beli untuk '{$scrapItem->name}' (" . FormatHelper::rupiah($pricePerUnit) . ") melebihi harga master (" . FormatHelper::rupiah($masterBuyPrice) . ").");
+                    $isOwner = $user->isOwner() || $user->isSuperAdmin();
+                    if (!$isOwner && !$isNewlyCreated && $masterBuyPrice > 0 && $pricePerUnit > $masterBuyPrice) {
+                        $roleLabel = ($user->role === User::ROLE_ADMIN) ? 'Admin' : 'Kasir';
+                        throw new Exception("{$roleLabel} tidak diizinkan memasukkan harga beli untuk '{$scrapItem->name}' (" . FormatHelper::rupiah($pricePerUnit) . ") melebihi harga master (" . FormatHelper::rupiah($masterBuyPrice) . "). Hanya Owner yang dapat memasukkan harga di atas harga master.");
                     }
 
                     $itemSubtotal = round($quantity * $pricePerUnit, 2);
@@ -120,8 +244,10 @@ class PurchaseTransactionService
                         : (float) $scrapItem->buy_price_per_kg;
 
                     $masterBuyPrice = (float) $scrapItem->buy_price_per_kg;
-                    if ($masterBuyPrice > 0 && $pricePerKg > $masterBuyPrice) {
-                        throw new Exception("Harga beli untuk '{$scrapItem->name}' (" . FormatHelper::rupiah($pricePerKg) . ") melebihi harga master (" . FormatHelper::rupiah($masterBuyPrice) . ").");
+                    $isOwner = $user->isOwner() || $user->isSuperAdmin();
+                    if (!$isOwner && !$isNewlyCreated && $masterBuyPrice > 0 && $pricePerKg > $masterBuyPrice) {
+                        $roleLabel = ($user->role === User::ROLE_ADMIN) ? 'Admin' : 'Kasir';
+                        throw new Exception("{$roleLabel} tidak diizinkan memasukkan harga beli untuk '{$scrapItem->name}' (" . FormatHelper::rupiah($pricePerKg) . ") melebihi harga master (" . FormatHelper::rupiah($masterBuyPrice) . "). Hanya Owner yang dapat memasukkan harga di atas harga master.");
                     }
 
                     $itemSubtotal = round($net * $pricePerKg, 2);
@@ -132,19 +258,38 @@ class PurchaseTransactionService
                 $totalNetWeight += ($unitType === 'kg' ? $net : 0);
                 $subtotalAmount += $itemSubtotal;
 
-                $processedItems[] = [
-                    'scrap_item' => $scrapItem,
-                    'unit_type' => $unitType,
-                    'item_type_name' => $itemTypeName,
-                    'quantity' => $quantity,
-                    'gross_weight' => $gross,
-                    'tare_weight' => $tare,
-                    'net_weight' => $net,
-                    'price_per_kg' => $pricePerKg,
-                    'subtotal' => $itemSubtotal,
-                    'notes' => $row['notes'] ?? null,
-                ];
+                // Group items by item ID and price tier (Task: simpan berdasarkan harga)
+                $groupKey = $scrapItem->id . '_' . number_format($pricePerKg, 2, '.', '') . '_' . $unitType . '_' . trim($itemTypeName ?? '');
+
+                if (isset($consolidatedItems[$groupKey])) {
+                    // Harga sama: akumulasi ke baris tier harga tersebut
+                    $consolidatedItems[$groupKey]['gross_weight'] += $gross;
+                    $consolidatedItems[$groupKey]['tare_weight'] += $tare;
+                    $consolidatedItems[$groupKey]['net_weight'] += $net;
+                    $consolidatedItems[$groupKey]['quantity'] += $quantity;
+                    $consolidatedItems[$groupKey]['subtotal'] += $itemSubtotal;
+                    if (!empty($row['notes'])) {
+                        $existingNotes = $consolidatedItems[$groupKey]['notes'];
+                        $consolidatedItems[$groupKey]['notes'] = $existingNotes ? ($existingNotes . '; ' . $row['notes']) : $row['notes'];
+                    }
+                } else {
+                    // Harga beda: buat entri daftar harga yang berbeda untuk barang ini
+                    $consolidatedItems[$groupKey] = [
+                        'scrap_item' => $scrapItem,
+                        'unit_type' => $unitType,
+                        'item_type_name' => $itemTypeName,
+                        'quantity' => $quantity,
+                        'gross_weight' => $gross,
+                        'tare_weight' => $tare,
+                        'net_weight' => $net,
+                        'price_per_kg' => $pricePerKg,
+                        'subtotal' => $itemSubtotal,
+                        'notes' => $row['notes'] ?? null,
+                    ];
+                }
             }
+
+            $processedItems = array_values($consolidatedItems);
 
             $discountAmount = max(0, (float) ($data['discount_amount'] ?? 0));
             $roundingAmount = (float) ($data['rounding_amount'] ?? 0);
@@ -192,6 +337,29 @@ class PurchaseTransactionService
                 $paymentMethodId = (int) $paymentMethodId;
             } else {
                 $paymentMethodId = PaymentMethod::first()?->id ?? null;
+            }
+
+            // Auto-fallback bankInfo if empty and payment method is bank/transfer
+            if (empty($bankInfo) && $paymentMethodId) {
+                $pm = PaymentMethod::find($paymentMethodId);
+                $isBank = $pm && (
+                    str_contains(strtolower($pm->name), 'bank') ||
+                    str_contains(strtolower($pm->name), 'transfer') ||
+                    str_contains(strtolower($pm->code ?? ''), 'transfer')
+                );
+                if ($isBank) {
+                    $accNo = $pm->account_number ?: ($user->bank_account_number ?? null);
+                    $accName = $pm->account_holder ?: ($user->bank_account_name ?? null);
+                    $bName = $pm->bank_name ?: ($user->bank_name ?? null);
+
+                    $parts = [];
+                    if (!empty($bName)) $parts[] = $bName;
+                    if (!empty($accNo)) $parts[] = "Rek: {$accNo}";
+                    if (!empty($accName)) $parts[] = "a/n {$accName}";
+                    if (!empty($parts)) {
+                        $bankInfo = implode(' - ', $parts);
+                    }
+                }
             }
 
             // Create Transaction record
@@ -276,6 +444,20 @@ class PurchaseTransactionService
                     'average_buy_price' => round($newAvg, 2),
                 ]);
 
+                // Update price-tiered inventory (item_price_stocks)
+                $incomingQty = ($item['unit_type'] === 'pcs' || $item['unit_type'] === 'satuan' || $item['unit_type'] === 'unit')
+                    ? (float) ($item['quantity'] > 0 ? $item['quantity'] : $item['net_weight'])
+                    : (float) $item['net_weight'];
+
+                $priceStock = ItemPriceStock::firstOrCreate(
+                    ['scrap_item_id' => $scrapItem->id, 'price_per_kg' => $item['price_per_kg']],
+                    ['current_stock' => 0, 'total_in' => 0, 'total_out' => 0]
+                );
+                $priceStock->update([
+                    'current_stock' => (float) $priceStock->current_stock + $incomingQty,
+                    'total_in' => (float) $priceStock->total_in + $incomingQty,
+                ]);
+
                 // Record stock ledger movement
                 StockMovement::create([
                     'scrap_item_id' => $scrapItem->id,
@@ -302,6 +484,161 @@ class PurchaseTransactionService
     }
 
     /**
+     * Cancel a single item in a purchase transaction, reverse its stock, and recalculate totals.
+     *
+     * @throws Exception
+     */
+    public function cancelPurchaseItem(PurchaseTransaction $transaction, PurchaseTransactionItem $item, User $user, string $reason): bool
+    {
+        return DB::transaction(function () use ($transaction, $item, $user, $reason) {
+            if ($item->purchase_transaction_id !== $transaction->id) {
+                throw new Exception('Item tidak sesuai dengan transaksi ini.');
+            }
+
+            if ($item->is_cancelled) {
+                throw new Exception('Barang ini sudah dibatalkan sebelumnya.');
+            }
+
+            if ($transaction->isCancelled()) {
+                throw new Exception('Transaksi ini sudah dibatalkan secara keseluruhan.');
+            }
+
+            if (!$user->canCancelTransactions()) {
+                throw new Exception('Anda tidak memiliki hak akses untuk membatalkan item transaksi.');
+            }
+
+            // 1. Reverse stock for this specific item
+            if ($item->scrap_item_id) {
+                $stockBalance = StockBalance::where('scrap_item_id', $item->scrap_item_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($stockBalance) {
+                    $newStock = max(0, (float) $stockBalance->current_stock - (float) $item->net_weight);
+                    $newTotalIn = max(0, (float) $stockBalance->total_in - (float) $item->net_weight);
+
+                    $stockBalance->update([
+                        'current_stock' => $newStock,
+                        'total_in' => $newTotalIn,
+                    ]);
+
+                    StockMovement::create([
+                        'scrap_item_id' => $item->scrap_item_id,
+                        'user_id' => $user->id,
+                        'type' => StockMovement::TYPE_REVERSAL,
+                        'reference_type' => PurchaseTransaction::class,
+                        'reference_id' => $transaction->id,
+                        'weight_qty' => -$item->net_weight,
+                        'unit_price' => $item->price_per_kg,
+                        'balance_after' => $newStock,
+                        'notes' => "Batal item {$item->item_name_snapshot} pada nota {$transaction->invoice_number}: {$reason}",
+                    ]);
+                }
+
+                // Reverse price-tiered inventory
+                $revQty = ($item->unit_type === 'pcs' || $item->unit_type === 'satuan' || $item->unit_type === 'unit')
+                    ? (float) ($item->quantity > 0 ? $item->quantity : $item->net_weight)
+                    : (float) $item->net_weight;
+
+                $priceStock = ItemPriceStock::where('scrap_item_id', $item->scrap_item_id)
+                    ->where(function ($q) use ($item) {
+                        $q->where('price_per_kg', $item->price_per_kg)
+                          ->orWhereRaw('ABS(price_per_kg - ?) < 0.01', [$item->price_per_kg]);
+                    })
+                    ->first();
+                if ($priceStock) {
+                    $priceStock->update([
+                        'current_stock' => max(0, (float) $priceStock->current_stock - $revQty),
+                        'total_in' => max(0, (float) $priceStock->total_in - $revQty),
+                    ]);
+                }
+            }
+
+            // 2. Mark item as cancelled
+            $item->update([
+                'is_cancelled' => true,
+                'cancel_reason' => $reason,
+                'cancelled_by' => $user->id,
+                'cancelled_at' => Carbon::now(),
+            ]);
+
+            // 3. Recalculate transaction totals from remaining active items
+            $activeItems = $transaction->items()->where('is_cancelled', false)->get();
+
+            if ($activeItems->isEmpty()) {
+                // If all items are now cancelled, cancel the whole transaction
+                if ($transaction->debt_deduction_amount > 0) {
+                    app(DebtService::class)->reversePurchaseDebtDeductions($transaction->id);
+                }
+
+                $transaction->update([
+                    'status' => PurchaseTransaction::STATUS_CANCELLED,
+                    'cancel_reason' => 'Semua barang telah dibatalkan. Alasan terakhir: ' . $reason,
+                    'cancelled_by' => $user->id,
+                    'cancelled_at' => Carbon::now(),
+                    'total_gross_weight' => 0,
+                    'total_tare_weight' => 0,
+                    'total_net_weight' => 0,
+                    'subtotal_amount' => 0,
+                    'final_amount' => 0,
+                    'net_cash_paid' => 0,
+                    'debt_deduction_amount' => 0,
+                ]);
+            } else {
+                $newTotalGross = 0;
+                $newTotalTare = 0;
+                $newTotalNet = 0;
+                $newSubtotal = 0;
+
+                foreach ($activeItems as $actItem) {
+                    $isPcs = ($actItem->unit_type === 'pcs' || $actItem->unit_type === 'satuan');
+                    $grossVal = $isPcs ? ($actItem->gross_weight > 0 ? $actItem->gross_weight : ($actItem->quantity + $actItem->tare_weight)) : $actItem->gross_weight;
+                    $netVal = $isPcs ? ($actItem->net_weight > 0 ? $actItem->net_weight : $actItem->quantity) : $actItem->net_weight;
+
+                    $newTotalGross += (float) $grossVal;
+                    $newTotalTare += (float) $actItem->tare_weight;
+                    $newTotalNet += (float) $netVal;
+                    $newSubtotal += (float) $actItem->subtotal;
+                }
+
+                $discount = min((float) $transaction->discount_amount, $newSubtotal);
+                $rounding = (float) $transaction->rounding_amount;
+                $newFinalAmount = max(0, $newSubtotal - $discount + $rounding);
+
+                // Handle debt deduction if applied
+                $debtDeduction = (float) $transaction->debt_deduction_amount;
+                if ($debtDeduction > $newFinalAmount) {
+                    $debtDeduction = $newFinalAmount;
+                }
+                $newNetCashPaid = max(0, $newFinalAmount - $debtDeduction);
+
+                $transaction->update([
+                    'total_gross_weight' => $newTotalGross,
+                    'total_tare_weight' => $newTotalTare,
+                    'total_net_weight' => $newTotalNet,
+                    'subtotal_amount' => $newSubtotal,
+                    'final_amount' => $newFinalAmount,
+                    'debt_deduction_amount' => $debtDeduction,
+                    'net_cash_paid' => $newNetCashPaid,
+                ]);
+            }
+
+            ActivityLog::record(
+                action: 'purchase_item_cancelled',
+                subject: $transaction,
+                description: "Item '{$item->item_name_snapshot}' pada transaksi {$transaction->invoice_number} dibatalkan oleh {$user->name}. Alasan: {$reason}",
+                payload: [
+                    'item_id' => $item->id,
+                    'item_name' => $item->item_name_snapshot,
+                    'reason' => $reason
+                ]
+            );
+
+            return true;
+        });
+    }
+
+    /**
      * Cancel / void an existing purchase transaction and reverse stock.
      *
      * @throws Exception
@@ -320,7 +657,7 @@ class PurchaseTransactionService
             $transaction->load('items.scrapItem');
 
             foreach ($transaction->items as $item) {
-                if (!$item->scrap_item_id) {
+                if (!$item->scrap_item_id || $item->is_cancelled) {
                     continue;
                 }
 
@@ -347,6 +684,24 @@ class PurchaseTransactionService
                         'unit_price' => $item->price_per_kg,
                         'balance_after' => $newStock,
                         'notes' => "Pembatalan nota penerimaan {$transaction->invoice_number}: {$reason}",
+                    ]);
+                }
+
+                // Reverse price-tiered inventory
+                $revQty = ($item->unit_type === 'pcs' || $item->unit_type === 'satuan' || $item->unit_type === 'unit')
+                    ? (float) ($item->quantity > 0 ? $item->quantity : $item->net_weight)
+                    : (float) $item->net_weight;
+
+                $priceStock = ItemPriceStock::where('scrap_item_id', $item->scrap_item_id)
+                    ->where(function ($q) use ($item) {
+                        $q->where('price_per_kg', $item->price_per_kg)
+                          ->orWhereRaw('ABS(price_per_kg - ?) < 0.01', [$item->price_per_kg]);
+                    })
+                    ->first();
+                if ($priceStock) {
+                    $priceStock->update([
+                        'current_stock' => max(0, (float) $priceStock->current_stock - $revQty),
+                        'total_in' => max(0, (float) $priceStock->total_in - $revQty),
                     ]);
                 }
             }
@@ -379,7 +734,7 @@ class PurchaseTransactionService
      */
     protected function generateInvoiceNumber(Carbon $date): string
     {
-        $prefix = 'KB-' . $date->format('ymd') . '-';
+        $prefix = 'PPJ-' . $date->format('ymd') . '-';
         $latest = PurchaseTransaction::where('invoice_number', 'LIKE', $prefix . '%')
             ->orderBy('id', 'desc')
             ->value('invoice_number');

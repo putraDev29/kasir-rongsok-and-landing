@@ -26,6 +26,8 @@ class PurchaseTransaction extends Model
         'supplier_address',
         'user_id',
         'payment_method_id',
+        'bank_info',
+        'payment_notes',
         'transaction_date',
         'total_gross_weight',
         'total_tare_weight',
@@ -88,6 +90,11 @@ class PurchaseTransaction extends Model
         return $this->hasMany(PurchaseTransactionItem::class);
     }
 
+    public function activeItems(): HasMany
+    {
+        return $this->hasMany(PurchaseTransactionItem::class)->where('is_cancelled', false);
+    }
+
     public function debtPayments(): HasMany
     {
         return $this->hasMany(DebtPayment::class);
@@ -96,6 +103,98 @@ class PurchaseTransaction extends Model
     public function isCancelled(): bool
     {
         return $this->status === self::STATUS_CANCELLED;
+    }
+
+    public function isBankPayment(): bool
+    {
+        if (!empty($this->bank_info)) {
+            return true;
+        }
+
+        $methodName = strtolower($this->paymentMethod?->name ?? '');
+        $methodCode = strtolower($this->paymentMethod?->code ?? '');
+
+        return str_contains($methodName, 'bank') ||
+               str_contains($methodName, 'transfer') ||
+               str_contains($methodName, 'bca') ||
+               str_contains($methodName, 'bri') ||
+               str_contains($methodName, 'mandiri') ||
+               str_contains($methodName, 'bni') ||
+               str_contains($methodCode, 'transfer');
+    }
+
+    public function getBankAccountNumber(): ?string
+    {
+        if (!empty($this->bank_info)) {
+            if (preg_match('/(?:Rek|No\.?\s*Rek)\s*:\s*([^-\/]+)/i', $this->bank_info, $matches)) {
+                $val = trim($matches[1]);
+                if (!empty($val)) {
+                    return $val;
+                }
+            }
+        }
+
+        if (!empty($this->supplier?->bank_account_number)) {
+            return $this->supplier->bank_account_number;
+        }
+
+        if (!empty($this->user?->bank_account_number)) {
+            return $this->user->bank_account_number;
+        }
+
+        return null;
+    }
+
+    public function getBankAccountName(): ?string
+    {
+        if (!empty($this->bank_info)) {
+            if (preg_match('/(?:a\/?n\.?)\s*:?\s*([^-\/]+)/i', $this->bank_info, $matches)) {
+                $val = trim($matches[1]);
+                if (!empty($val)) {
+                    return $val;
+                }
+            }
+        }
+
+        if (!empty($this->supplier?->bank_account_name)) {
+            return $this->supplier->bank_account_name;
+        }
+
+        if (!empty($this->user?->bank_account_name)) {
+            return $this->user->bank_account_name;
+        }
+
+        return null;
+    }
+
+    public function getBankName(): ?string
+    {
+        if (!empty($this->bank_info)) {
+            $parts = explode('-', $this->bank_info);
+            $first = trim($parts[0] ?? '');
+            if (!empty($first) && !preg_match('/(?:Rek|a\/n)/i', $first)) {
+                return $first;
+            }
+        }
+
+        if (!empty($this->supplier?->bank_name)) {
+            return $this->supplier->bank_name;
+        }
+
+        if (!empty($this->user?->bank_name)) {
+            return $this->user->bank_name;
+        }
+
+        if (!empty($this->paymentMethod?->bank_name)) {
+            return $this->paymentMethod->bank_name;
+        }
+
+        $methodName = $this->paymentMethod?->name ?? '';
+        if (preg_match('/(BCA|BRI|Mandiri|BNI|BSI|CIMB|Permata|Danamon)/i', $methodName, $matches)) {
+            return strtoupper($matches[1]);
+        }
+
+        return null;
     }
 }
 

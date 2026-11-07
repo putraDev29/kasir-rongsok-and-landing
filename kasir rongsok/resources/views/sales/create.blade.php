@@ -42,6 +42,143 @@
 
             <input type="hidden" name="delivery_order_id" x-model="deliveryOrderId">
 
+            <!-- Pilihan Metode Penyerahan / Pengiriman Barang -->
+            <div class="p-4 rounded-xl border bg-slate-50/80 border-slate-200 space-y-3">
+                <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    Metode Penyerahan / Pengiriman Barang *
+                </label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Opsi 1: Diambil Sendiri oleh Pembeli -->
+                    <label class="relative flex items-start p-3.5 rounded-xl border-2 cursor-pointer transition-all"
+                           :class="deliveryType === 'pickup' ? 'border-emerald-600 bg-emerald-50/50 shadow-xs' : 'border-slate-200 bg-white hover:border-slate-300'">
+                        <input type="radio" name="delivery_type" value="pickup" x-model="deliveryType" class="mt-0.5 text-emerald-600 focus:ring-emerald-500">
+                        <div class="ml-3">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-xs text-slate-900">Diambil Sendiri oleh Pembeli</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    Langsung Selesai
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1">
+                                Pelanggan datang ke depo. <strong>Tanpa surat jalan</strong>, hanya faktur penjualan (invoice) & status langsung SELESAI.
+                            </p>
+                        </div>
+                    </label>
+
+                    <!-- Opsi 2: Dengan Pengiriman Armada -->
+                    <label class="relative flex items-start p-3.5 rounded-xl border-2 cursor-pointer transition-all"
+                           :class="deliveryType === 'delivery' ? 'border-blue-600 bg-blue-50/50 shadow-xs' : 'border-slate-200 bg-white hover:border-slate-300'">
+                        <input type="radio" name="delivery_type" value="delivery" x-model="deliveryType" class="mt-0.5 text-blue-600 focus:ring-blue-500">
+                        <div class="ml-3">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-xs text-slate-900">Dengan Pengiriman Armada Depo</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                    Perlu Surat Jalan
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1">
+                                Dikirim dengan kendaraan/sopir perusahaan. <strong>Status baru selesai setelah pengiriman tuntas.</strong>
+                            </p>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Input Armada & Pengemudi (Hanya tampil jika dengan pengiriman) -->
+                <div x-show="deliveryType === 'delivery'" x-transition class="pt-3 border-t border-slate-200 text-xs space-y-2">
+                    <div class="flex items-center justify-between text-blue-900 font-bold text-xs">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="truck" class="w-4 h-4 text-blue-600"></i>
+                            <span>Informasi Armada & Sopir Pengirim (Opsional - Bisa diisi untuk otomatis terbitkan Surat Jalan):</span>
+                        </div>
+                        <span class="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Bisa Simpan Rekening</span>
+                    </div>
+
+                    <!-- Pilih dari Master Sopir -->
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Pilih Dari Master Sopir (Opsional)</label>
+                        <select name="driver_id" x-model="driverId" @change="onDriverSelect($event)"
+                                class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 bg-white focus:ring-blue-500">
+                            <option value="">-- Ketik Sopir Baru / Atau Pilih dari Master --</option>
+                            @foreach($drivers ?? [] as $drv)
+                                <option value="{{ $drv->id }}" data-name="{{ $drv->name }}" data-phone="{{ $drv->phone }}"
+                                        data-vehicle-number="{{ $drv->vehicle_number }}" data-vehicle-type="{{ $drv->vehicle_type }}"
+                                        data-bank-name="{{ $drv->bank_name }}" data-bank-number="{{ $drv->bank_account_number }}" data-bank-holder="{{ $drv->bank_account_name }}">
+                                    {{ $drv->name }} [{{ $drv->code }}] {{ $drv->vehicle_number ? ' - Plat: ' . $drv->vehicle_number : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Nama Sopir Armada</label>
+                            <input type="text" name="driver_name" x-model="driverName" placeholder="Contoh: Pak Joko"
+                                   class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 bg-white focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">No. Plat Polisi Kendaraan</label>
+                            <input type="text" name="vehicle_number" x-model="vehicleNumber" placeholder="B 1234 ABC"
+                                   class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 font-mono uppercase bg-white focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Jenis Armada</label>
+                            <input type="text" name="vehicle_type" x-model="vehicleType" placeholder="Truk Engkel / Fuso / Pick Up"
+                                   class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 bg-white focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Informasi Rekening Bank Sopir (Pencairan Ongkos Armada) -->
+                    <div class="p-2.5 bg-blue-50/70 border border-blue-200 rounded-lg space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="block text-[10.5px] font-bold text-blue-900 uppercase flex items-center gap-1">
+                                <i data-lucide="credit-card" class="w-3.5 h-3.5 text-blue-600"></i>
+                                <span>Rekening Bank Sopir (Pencairan Ongkos Armada)</span>
+                            </span>
+                            <span class="text-[9.5px] text-blue-700 font-medium">Opsional</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nama Bank</label>
+                                <input type="text" name="driver_bank_name" x-model="driverBankName" placeholder="BCA / BRI / Mandiri"
+                                       class="w-full py-1 px-2 text-xs rounded border border-slate-300 bg-white focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nomor Rekening</label>
+                                <input type="text" name="driver_bank_account_number" x-model="driverBankAccountNumber" placeholder="No. Rekening"
+                                       class="w-full py-1 px-2 text-xs rounded border border-slate-300 font-mono bg-white focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nama Pemilik (A/N)</label>
+                                <input type="text" name="driver_bank_account_name" x-model="driverBankAccountName" placeholder="Atas Nama Pemilik"
+                                       class="w-full py-1 px-2 text-xs rounded border border-slate-300 bg-white focus:ring-blue-500">
+                            </div>
+                        </div>
+                        <div class="pt-0.5 flex items-center">
+                            <label class="inline-flex items-center gap-1.5 text-blue-900 text-[10.5px] font-medium cursor-pointer">
+                                <input type="checkbox" name="save_to_driver_bank" value="1" checked class="rounded border-blue-300 text-blue-600 focus:ring-blue-500">
+                                <span>Simpan / perbarui nomor rekening ke master sopir/driver</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Biaya Operasional Pengiriman (Task 10) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-blue-100">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Biaya Ongkos Armada / Supir (Rp)</label>
+                            <input type="number" name="shipping_cost" min="0" step="1000" placeholder="0"
+                                   class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 font-mono text-slate-800 bg-white focus:ring-blue-500">
+                            <span class="text-[10px] text-slate-400">Masuk ke pengeluaran operasional & Surat Jalan Lembar 1 Owner.</span>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Biaya Bongkar Muat / Tenaga Angkut (Rp)</label>
+                            <input type="number" name="loading_cost" min="0" step="1000" placeholder="0"
+                                   class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 font-mono text-slate-800 bg-white focus:ring-blue-500">
+                            <span class="text-[10px] text-slate-400">Masuk ke pengeluaran operasional & Surat Jalan Lembar 1 Owner.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Transaction Date & Buyer Details -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
@@ -66,7 +203,10 @@
                 </div>
 
                 <div class="sm:col-span-2">
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Alamat Tujuan Pengiriman</label>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1"
+                           x-text="deliveryType === 'delivery' ? 'Alamat Tujuan Pengiriman (Pabrik / Gudang Bongkar) *' : 'Alamat Pembeli (Opsional)'">
+                        Alamat Pembeli
+                    </label>
                     <input type="text" name="buyer_address" x-model="buyerAddress" placeholder="Kawasan Industri / Alamat Pabrik"
                            class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-blue-500">
                 </div>
@@ -82,12 +222,20 @@
 
                 <!-- Bank Info for Sales (Task 11) -->
                 <div class="sm:col-span-2" x-show="isTransferPayment()">
-                    <label class="block text-xs font-semibold text-blue-900 uppercase mb-1">Informasi Rekening Bank Tujuan Transfer (Dicetak di Faktur)</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="text" name="custom_bank" placeholder="Nama Bank (BCA / Mandiri / BRI)"
+                    <label class="block text-xs font-semibold text-blue-900 uppercase mb-1">Informasi Rekening Bank Tujuan Transfer (Dicetak di Faktur / Nota)</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input type="text" name="custom_bank" x-model="customBank" placeholder="Nama Bank (BCA / Mandiri / BRI)"
                                class="w-full py-1.5 px-3 text-xs rounded-lg border border-blue-300 bg-blue-50/50">
-                        <input type="text" name="custom_account_no" placeholder="No. Rek & Atas Nama Rekening"
+                        <input type="text" name="custom_account_no" x-model="customAccountNo" placeholder="Nomor Rekening"
                                class="w-full py-1.5 px-3 text-xs rounded-lg border border-blue-300 bg-blue-50/50 font-mono">
+                        <input type="text" name="custom_account_name" x-model="customAccountName" placeholder="Nama Pemilik Rekening (A/N)"
+                               class="w-full py-1.5 px-3 text-xs rounded-lg border border-blue-300 bg-blue-50/50">
+                    </div>
+                    <div class="mt-1.5 flex items-center">
+                        <label class="inline-flex items-center gap-1.5 text-blue-900 text-xs font-medium cursor-pointer">
+                            <input type="checkbox" name="save_to_user_bank" value="1" checked class="rounded border-blue-300 text-blue-600 focus:ring-blue-500">
+                            <span>Simpan / perbarui nomor rekening ini ke data profil kasir/user saya</span>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -131,23 +279,86 @@
                             <div class="p-3.5 space-y-3">
                                 <!-- Baris 1: Pilihan Barang, Jenis/Varian & Tipe Hitungan -->
                                 <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                                    <div class="md:col-span-6">
+                                    <div class="md:col-span-6 relative" @click.outside="row.dropdown_open = false">
                                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                            Barang & Stok Gudang <span class="text-red-500">*</span>
+                                            Barang Sesuai Harga & Stok <span class="text-red-500">*</span>
                                         </label>
-                                        <select :name="'items[' + idx + '][scrap_item_id]'" 
-                                                x-model="row.scrap_item_id" 
-                                                @change="onItemChanged(idx)"
-                                                required
-                                                class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-semibold text-slate-900 bg-white">
-                                            <option value="">-- Pilih Barang dari Gudang --</option>
-                                            <template x-for="item in masterItems" :key="item.id">
-                                                <option :value="item.id" 
-                                                        x-text="item.name + ' [Stok: ' + (item.stock_balance ? formatNum(item.stock_balance.current_stock) : 0) + ' ' + (item.unit_type || 'kg') + ']'"></option>
+
+                                        <input type="hidden" :name="'items[' + idx + '][scrap_item_id]'" :value="row.scrap_item_id" required>
+                                        <input type="hidden" :name="'items[' + idx + '][item_price_stock_id]'" :value="row.item_price_stock_id || ''">
+                                        <input type="hidden" :name="'items[' + idx + '][tier_id]'" :value="row.tier_id || ''">
+                                        <input type="hidden" :name="'items[' + idx + '][buy_price_snapshot]'" :value="row.buy_price_snapshot || row.avg_buy_price || 0">
+
+                                        <div class="relative">
+                                            <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                                                <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                                            </span>
+
+                                            <input type="text"
+                                                   x-model="row.search_text"
+                                                   @focus="row.dropdown_open = true"
+                                                   @input="row.dropdown_open = true"
+                                                   placeholder="Cari nama barang atau harga (cth: Besi, 4000)..."
+                                                   required
+                                                   class="w-full pl-8 pr-12 py-2 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-bold text-slate-900 bg-white shadow-2xs">
+
+                                            <!-- Quick Clear & Caret Icons -->
+                                            <div class="absolute inset-y-0 right-0 pr-1.5 flex items-center gap-0.5">
+                                                <button type="button" 
+                                                        x-show="row.search_text"
+                                                        @click="clearRowItem(row)" 
+                                                        class="text-slate-400 hover:text-slate-600 p-0.5 rounded"
+                                                        title="Hapus pilihan barang">
+                                                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                                </button>
+                                                <button type="button" 
+                                                        @click="row.dropdown_open = !row.dropdown_open"
+                                                        class="text-slate-400 hover:text-slate-600 p-0.5 rounded">
+                                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': row.dropdown_open }"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Floating Filtered List -->
+                                        <div x-show="row.dropdown_open"
+                                             x-transition:enter="transition ease-out duration-100"
+                                             x-transition:enter-start="opacity-0 scale-95"
+                                             x-transition:enter-end="opacity-100 scale-100"
+                                             x-transition:leave="transition ease-in duration-75"
+                                             x-transition:leave-start="opacity-100 scale-100"
+                                             x-transition:leave-end="opacity-0 scale-95"
+                                             class="absolute z-50 left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white rounded-xl border border-slate-200 shadow-xl divide-y divide-slate-100"
+                                             style="display: none;">
+                                            
+                                            <template x-for="item in filteredMasterItems(row.search_text)" :key="item.tier_id || (item.id + '_' + item.price_per_kg)">
+                                                <button type="button" 
+                                                        @click="selectRowItem(row, item)"
+                                                        class="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center justify-between transition-colors"
+                                                        :class="{ 'bg-blue-50/70': row.tier_id === item.tier_id }">
+                                                    <div class="min-w-0 pr-2">
+                                                        <div class="text-xs font-bold text-slate-900 truncate" x-text="item.name"></div>
+                                                        <div class="text-[10px] text-slate-500 font-mono">
+                                                            <span x-text="item.code"></span>
+                                                            <span x-show="item.category_name" x-text="' • ' + item.category_name"></span>
+                                                            <span class="text-emerald-700 font-semibold" x-text="' • Stok: ' + formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg')"></span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-right shrink-0">
+                                                        <div class="text-[11px] font-mono font-bold text-blue-700" x-text="formatRp(item.sell_price_per_kg) + '/' + (item.unit_type || 'kg')"></div>
+                                                        <div class="text-[9px] text-slate-400 font-mono" x-text="'Modal: ' + formatRp(item.buy_price_snapshot)"></div>
+                                                    </div>
+                                                </button>
                                             </template>
-                                        </select>
+
+                                            <template x-if="filteredMasterItems(row.search_text).length === 0">
+                                                <div class="p-3 text-center text-xs text-slate-500">
+                                                    Tidak ada barang dengan kata kunci "<span class="font-bold text-slate-700" x-text="row.search_text"></span>"
+                                                </div>
+                                            </template>
+                                        </div>
+
                                         <!-- Warning if stock exceeded -->
-                                        <div x-show="rowStockQuantity(row) > row.maxStock" class="text-[11px] text-red-600 font-bold mt-1">
+                                        <div x-show="row.scrap_item_id && rowStockQuantity(row) > row.maxStock" class="text-[11px] text-red-600 font-bold mt-1">
                                             ⚠️ Melebihi stok gudang! Maks: <span x-text="formatNum(row.maxStock)"></span>
                                         </div>
                                     </div>
@@ -301,11 +512,43 @@ function salesPos() {
         
         selectedDoId: '{{ $selectedDeliveryOrder?->id ?? "" }}',
         deliveryOrderId: '{{ $selectedDeliveryOrder?->id ?? "" }}',
+        deliveryType: '{{ $selectedDeliveryOrder ? "delivery" : "pickup" }}',
+        driversList: @json($drivers ?? []),
+        driverId: '',
+        driverName: '{{ $selectedDeliveryOrder?->driver_name ?? "" }}',
+        driverPhone: '{{ $selectedDeliveryOrder?->driver_phone ?? "" }}',
+        vehicleNumber: '{{ $selectedDeliveryOrder?->vehicle_number ?? "" }}',
+        vehicleType: '{{ $selectedDeliveryOrder?->vehicle_type ?? "Truk" }}',
+        driverBankName: '{{ $selectedDeliveryOrder?->driver_bank_name ?? "" }}',
+        driverBankAccountNumber: '{{ $selectedDeliveryOrder?->driver_bank_account_number ?? "" }}',
+        driverBankAccountName: '{{ $selectedDeliveryOrder?->driver_bank_account_name ?? "" }}',
+        saveToDriverBank: true,
+
+        onDriverSelect(e) {
+            const opt = e.target.selectedOptions[0];
+            if (opt && opt.value) {
+                this.driverName = opt.dataset.name || '';
+                this.driverPhone = opt.dataset.phone || '';
+                if (opt.dataset.vehicleNumber) this.vehicleNumber = opt.dataset.vehicleNumber;
+                if (opt.dataset.vehicleType) this.vehicleType = opt.dataset.vehicleType;
+                this.driverBankName = opt.dataset.bankName || '';
+                this.driverBankAccountNumber = opt.dataset.bankNumber || '';
+                this.driverBankAccountName = opt.dataset.bankHolder || '';
+            } else {
+                this.driverId = '';
+                this.driverBankName = '';
+                this.driverBankAccountNumber = '';
+                this.driverBankAccountName = '';
+            }
+        },
         transactionDate: '',
         buyerName: '{{ $selectedDeliveryOrder?->recipient_name ?? "" }}',
         buyerPhone: '{{ $selectedDeliveryOrder?->recipient_phone ?? "" }}',
         buyerAddress: '{{ $selectedDeliveryOrder?->recipient_address ?? "" }}',
         paymentMethodId: '{{ $paymentMethods->first()?->id ?? 1 }}',
+        customBank: '{{ addslashes(auth()->user()->bank_name ?? '') }}',
+        customAccountNo: '{{ addslashes(auth()->user()->bank_account_number ?? '') }}',
+        customAccountName: '{{ addslashes(auth()->user()->bank_account_name ?? '') }}',
         notes: '{{ $selectedDeliveryOrder ? "Sinkron Surat Jalan: " . $selectedDeliveryOrder->delivery_number : "" }}',
 
         discountAmount: 0,
@@ -314,22 +557,37 @@ function salesPos() {
         init() {
             if (this.selectedDeliveryOrder && this.selectedDeliveryOrder.items && this.selectedDeliveryOrder.items.length > 0) {
                 this.rows = this.selectedDeliveryOrder.items.map(it => {
-                    const found = this.masterItems.find(m => m.id == it.scrap_item_id);
+                    const found = this.masterItems.find(m => m.id == it.scrap_item_id && (parseFloat(m.price_per_kg) == parseFloat(it.price_per_kg) || !it.price_per_kg)) || this.masterItems.find(m => m.id == it.scrap_item_id);
+                    const buyPrice = found ? (parseFloat(found.buy_price_snapshot) || parseFloat(found.price_per_kg) || 0) : 0;
+                    const sellPrice = (it.price_per_kg && parseFloat(it.price_per_kg) > 0) ? parseFloat(it.price_per_kg) : (found ? (parseFloat(found.sell_price_per_kg) || 0) : 0);
+                    const stock = found ? (parseFloat(found.current_stock) || 0) : 0;
                     return {
                         uid: Math.random(),
                         scrap_item_id: it.scrap_item_id || '',
+                        tier_id: found ? found.tier_id : '',
+                        item_price_stock_id: found ? (found.item_price_stock_id || '') : '',
+                        search_text: found ? (found.name + ' [Stok: ' + this.formatNum(stock) + ' ' + (found.unit_type || 'kg') + ']') : (it.item_name || ''),
+                        dropdown_open: false,
                         item_type_name: it.item_type_name || '',
                         unit_type: it.unit_type || 'kg',
                         quantity: it.quantity || 1,
                         weight: it.weight || 0,
-                        sell_price_per_kg: found ? (parseFloat(found.sell_price_per_kg) || 0) : 0,
-                        avg_buy_price: found && found.stock_balance ? (parseFloat(found.stock_balance.average_buy_price) || 0) : 0,
-                        maxStock: found && found.stock_balance ? (parseFloat(found.stock_balance.current_stock) || 0) : 0
+                        sell_price_per_kg: sellPrice,
+                        buy_price_snapshot: buyPrice,
+                        avg_buy_price: buyPrice,
+                        maxStock: stock
                     };
                 });
             } else {
                 this.addRow();
             }
+
+            this.$watch('paymentMethodId', (val) => {
+                const pm = this.paymentMethodsList.find(m => m.id == val);
+                if (pm && pm.bank_name && !this.customBank) {
+                    this.customBank = pm.bank_name;
+                }
+            });
         },
 
         loadFromDeliveryOrder() {
@@ -347,19 +605,75 @@ function salesPos() {
             return name.includes('transfer') || name.includes('bank');
         },
 
+        filteredMasterItems(searchText) {
+            if (!searchText || searchText.trim() === '') {
+                return this.masterItems;
+            }
+            const q = searchText.toLowerCase().trim();
+            return this.masterItems.filter(item => {
+                const name = (item.name || '').toLowerCase();
+                const code = (item.code || '').toLowerCase();
+                const base = (item.base_name || '').toLowerCase();
+                const cat = (item.category_name || '').toLowerCase();
+                const price = String(item.price_per_kg || '');
+                return name.includes(q) || code.includes(q) || base.includes(q) || cat.includes(q) || price.includes(q);
+            });
+        },
+
+        selectRowItem(row, item) {
+            row.scrap_item_id = item.scrap_item_id || item.id;
+            row.item_price_stock_id = item.item_price_stock_id || '';
+            row.tier_id = item.tier_id || (item.id + '_' + item.price_per_kg);
+            row.search_text = item.name + ' [Stok: ' + this.formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg') + ']';
+            row.sell_price_per_kg = parseFloat(item.sell_price_per_kg) || 0;
+            row.buy_price_snapshot = parseFloat(item.buy_price_snapshot) || parseFloat(item.price_per_kg) || 0;
+            row.avg_buy_price = row.buy_price_snapshot;
+            row.maxStock = parseFloat(item.current_stock) || 0;
+            row.unit_type = item.unit_type || 'kg';
+            row.dropdown_open = false;
+            this.refreshIcons();
+        },
+
+        clearRowItem(row) {
+            row.scrap_item_id = '';
+            row.item_price_stock_id = '';
+            row.tier_id = '';
+            row.search_text = '';
+            row.sell_price_per_kg = 0;
+            row.buy_price_snapshot = 0;
+            row.avg_buy_price = 0;
+            row.maxStock = 0;
+            row.dropdown_open = true;
+        },
+
+        refreshIcons() {
+            this.$nextTick(() => {
+                if (typeof window.refreshIcons === 'function') {
+                    window.refreshIcons();
+                } else if (window.createIcons && window.lucideIcons) {
+                    window.createIcons({ icons: window.lucideIcons });
+                }
+            });
+        },
+
         addRow() {
             this.rows.push({
                 uid: Date.now() + Math.random(),
                 scrap_item_id: '',
+                item_price_stock_id: '',
+                tier_id: '',
+                search_text: '',
+                dropdown_open: false,
                 item_type_name: '',
                 unit_type: 'kg',
                 quantity: 1,
                 weight: '',
                 sell_price_per_kg: 0,
+                buy_price_snapshot: 0,
                 avg_buy_price: 0,
                 maxStock: 0
             });
-            if (window.refreshIcons) window.refreshIcons();
+            this.refreshIcons();
         },
 
         removeRow(idx) {
@@ -369,18 +683,7 @@ function salesPos() {
         },
 
         onItemChanged(idx) {
-            const row = this.rows[idx];
-            const found = this.masterItems.find(i => i.id == row.scrap_item_id);
-            if (found) {
-                row.sell_price_per_kg = parseFloat(found.sell_price_per_kg) || 0;
-                row.unit_type = found.unit_type || row.unit_type || 'kg';
-                row.maxStock = found.stock_balance ? parseFloat(found.stock_balance.current_stock) : 0;
-                row.avg_buy_price = found.stock_balance ? parseFloat(found.stock_balance.average_buy_price) : 0;
-            } else {
-                row.sell_price_per_kg = 0;
-                row.maxStock = 0;
-                row.avg_buy_price = 0;
-            }
+            // Handled by selectRowItem
         },
 
         isPcsUnit(row) {
@@ -448,7 +751,7 @@ function salesPos() {
         formatNum(val) {
             const num = parseFloat(val) || 0;
             if (Math.floor(num) === num) return num.toLocaleString('id-ID');
-            return num.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+            return num.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
         }
     };
 }

@@ -95,12 +95,12 @@
                     <span>Dashboard</span>
                 </a>
 
-                <div class="pt-2 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Transaksi Kasir</div>
+                <div class="pt-2 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">1. Transaksi Kasir & Timbang</div>
 
                 {{-- Timbang Kasir (Penerimaan Barang) --}}
                 <a href="{{ route('purchases.create') }}" 
                    class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('purchases.create') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
-                    <i data-lucide="badge-dollar-sign" class="w-4 h-4 {{ request()->routeIs('purchases.create') ? 'text-white' : 'text-emerald-500' }}"></i>
+                    <i data-lucide="scale" class="w-4 h-4 {{ request()->routeIs('purchases.create') ? 'text-white' : 'text-emerald-500' }}"></i>
                     <span>Penerimaan Barang</span>
                 </a>
 
@@ -111,13 +111,9 @@
                     <span>Riwayat Pembelian</span>
                 </a>
 
-                {{-- SELAIN ITU HANYA OWNER YANG BISA AKSES & UPDATE --}}
+                {{-- FITUR OWNER / SUPER ADMIN --}}
                 @if(Auth::user()->isSuperAdmin())
-                    <a href="{{ route('debts.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('debts.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
-                        <i data-lucide="handshake" class="w-4 h-4 {{ request()->routeIs('debts.*') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Hutang Piutang (Modal)</span>
-                    </a>
+                    <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">2. Penjualan & Ekspedisi</div>
 
                     <a href="{{ route('sales.index') }}" 
                        class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('sales.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
@@ -131,32 +127,12 @@
                         <span>Surat Jalan Pengiriman</span>
                     </a>
 
-                    <div class="pt-3 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Gudang & Inventori</div>
+                    <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">3. Keuangan & Kasbon</div>
 
-                    <a href="{{ route('stock.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('stock.index') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
-                        <i data-lucide="boxes" class="w-4 h-4 {{ request()->routeIs('stock.index') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Stok & Nilai Barang</span>
-                    </a>
-
-                    <a href="{{ route('stock.movements') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('stock.movements') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
-                        <i data-lucide="history" class="w-4 h-4 {{ request()->routeIs('stock.movements') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Mutasi Stok (Ledger)</span>
-                    </a>
-
-                    <div class="pt-3 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Master Data</div>
-
-                    <a href="{{ route('scrap-items.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('scrap-items.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
-                        <i data-lucide="tag" class="w-4 h-4 {{ request()->routeIs('scrap-items.*') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Jenis Barang & Harga</span>
-                    </a>
-
-                    <a href="{{ route('suppliers.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('suppliers.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
-                        <i data-lucide="users" class="w-4 h-4 {{ request()->routeIs('suppliers.*') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Data Pemasok / Pengepul</span>
+                    <a href="{{ route('debts.index') }}" 
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('debts.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="handshake" class="w-4 h-4 {{ request()->routeIs('debts.*') ? 'text-white' : 'text-slate-400' }}"></i>
+                        <span>Hutang Piutang (Kasbon Modal)</span>
                     </a>
 
                     <a href="{{ route('expenses.index') }}" 
@@ -171,7 +147,41 @@
                         <span>Slip Gaji Karyawan</span>
                     </a>
 
-                    <div class="pt-3 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Laporan & Analitik</div>
+                    <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">4. Gudang & Inventori</div>
+
+                    <a href="{{ route('stock.index') }}" 
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('stock.index') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="boxes" class="w-4 h-4 {{ request()->routeIs('stock.index') ? 'text-white' : 'text-slate-400' }}"></i>
+                        <span>Stok & Nilai Barang</span>
+                    </a>
+
+                    <a href="{{ route('stock.movements') }}" 
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('stock.movements') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="history" class="w-4 h-4 {{ request()->routeIs('stock.movements') ? 'text-white' : 'text-slate-400' }}"></i>
+                        <span>Mutasi Stok (Ledger)</span>
+                    </a>
+
+                    <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">5. Master Data Depo</div>
+
+                    <a href="{{ route('scrap-items.index') }}" 
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('scrap-items.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="tag" class="w-4 h-4 {{ request()->routeIs('scrap-items.*') ? 'text-white' : 'text-slate-400' }}"></i>
+                        <span>Jenis Barang & Harga</span>
+                    </a>
+
+                    <a href="{{ route('suppliers.index') }}" 
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('suppliers.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="users" class="w-4 h-4 {{ request()->routeIs('suppliers.*') ? 'text-white' : 'text-slate-400' }}"></i>
+                        <span>Data Pemasok / Pengepul</span>
+                    </a>
+
+                    <a href="{{ route('drivers.index') }}" 
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('drivers.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="truck" class="w-4 h-4 {{ request()->routeIs('drivers.*') ? 'text-white' : 'text-slate-400' }}"></i>
+                        <span>Data Sopir / Driver</span>
+                    </a>
+
+                    <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">6. Laporan & Rekapitulasi</div>
 
                     <a href="{{ route('reports.purchases') }}" 
                        class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('reports.purchases') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
@@ -191,7 +201,7 @@
                         <span>Laba / Rugi Usaha</span>
                     </a>
 
-                    <div class="pt-3 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Sistem</div>
+                    <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">7. Pengaturan Sistem</div>
 
                     <a href="{{ route('users.index') }}" 
                        class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('users.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
@@ -205,8 +215,8 @@
                         <span>Pengaturan Usaha</span>
                     </a>
 
-                    <div class="pt-3 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-emerald-400 flex items-center justify-between">
-                        <span>Website Publik</span>
+                    <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                        <span>8. Website & Landing Page</span>
                         <span class="px-1.5 py-0.2 rounded bg-emerald-900/60 text-[9px] text-emerald-300 font-bold border border-emerald-700/50">NEW</span>
                     </div>
 
@@ -226,10 +236,17 @@
                     </div>
                     <div class="truncate">
                         <div class="text-xs font-semibold text-white truncate">{{ Auth::user()->name }}</div>
-                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium leading-none 
-                            {{ Auth::user()->isSuperAdmin() ? 'bg-purple-900/60 text-purple-300 border border-purple-700/50' : (Auth::user()->isAdmin() ? 'bg-blue-900/60 text-blue-300 border border-blue-700/50' : 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50') }}">
-                            {{ strtoupper(str_replace('_', ' ', Auth::user()->role)) }}
-                        </span>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-medium leading-none 
+                                {{ Auth::user()->isSuperAdmin() ? 'bg-purple-900/60 text-purple-300 border border-purple-700/50' : (Auth::user()->isAdmin() ? 'bg-blue-900/60 text-blue-300 border border-blue-700/50' : 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50') }}">
+                                {{ strtoupper(str_replace('_', ' ', Auth::user()->role)) }}
+                            </span>
+                            @if(Auth::user()->hasBankDetails())
+                                <span class="text-[9px] text-slate-400 font-mono truncate" title="{{ Auth::user()->bankDisplay() }}">
+                                    💳 {{ Auth::user()->bank_name }}
+                                </span>
+                            @endif
+                        </div>
                     </div>
                 </div>
 
@@ -344,6 +361,7 @@
         @include('components.whatsapp-gateway-modal')
     @endif
     @include('components.whatsapp-receipt-modal')
+    @include('components.pdf-preview-modal')
 
     @stack('scripts')
     <script>

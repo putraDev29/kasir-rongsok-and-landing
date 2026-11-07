@@ -84,12 +84,13 @@ class ExpenseController extends Controller
 
         $date = Carbon::parse($data['expense_date']);
 
-        $prefix = 'EXP-' . $date->format('ymd') . '-';
+        $prefix = 'PPJ-EXP-' . $date->format('ymd') . '-';
         $latest = Expense::where('expense_number', 'LIKE', $prefix . '%')
+            ->orWhere('expense_number', 'LIKE', 'EXP-' . $date->format('ymd') . '-%')
             ->orderBy('id', 'desc')
             ->value('expense_number');
 
-        $num = $latest ? ((int) substr($latest, strlen($prefix)) + 1) : 1;
+        $num = $latest ? ((int) substr($latest, strrpos($latest, '-') + 1) + 1) : 1;
         $data['expense_number'] = $prefix . str_pad((string) $num, 4, '0', STR_PAD_LEFT);
         $data['user_id'] = Auth::id();
 
@@ -180,7 +181,13 @@ class ExpenseController extends Controller
         $pdf = Pdf::loadView('expenses.pdf', compact('expenses', 'totalAmount', 'startDate', 'endDate', 'settings'))
             ->setPaper('a4', 'portrait');
 
-        return $pdf->download('Laporan_Biaya_Operasional_' . date('Ymd') . '.pdf');
+        $filename = 'Laporan_Biaya_Operasional_' . date('Ymd') . '.pdf';
+
+        if ($request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
     }
 
     /**

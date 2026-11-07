@@ -30,6 +30,7 @@ class DebtService
             $debtNumber = $this->generateDebtNumber($date);
 
             $supplierId = $data['supplier_id'] ?? null;
+            $supplier = null;
             $borrowerName = $data['borrower_name'] ?? null;
             $borrowerPhone = $data['borrower_phone'] ?? null;
 
@@ -37,7 +38,20 @@ class DebtService
                 $supplier = Supplier::find($supplierId);
                 if ($supplier) {
                     $borrowerName = $supplier->name;
-                    $borrowerPhone = $supplier->phone ?? $borrowerPhone;
+                    $borrowerPhone = $supplier->phone ?? $supplierPhone ?? $supplier->phone;
+
+                    $bankName = trim($data['bank_name'] ?? '');
+                    $bankAccountNo = trim($data['bank_account_number'] ?? '');
+                    $bankAccountName = trim($data['bank_account_name'] ?? '');
+                    $hasBankInfo = !empty($bankName) || !empty($bankAccountNo) || !empty($bankAccountName);
+
+                    if ($hasBankInfo && (!empty($data['save_to_supplier_bank']) || empty($supplier->bank_account_number))) {
+                        $supplier->update(array_filter([
+                            'bank_name' => $bankName ?: $supplier->bank_name,
+                            'bank_account_number' => $bankAccountNo ?: $supplier->bank_account_number,
+                            'bank_account_name' => $bankAccountName ?: $supplier->bank_account_name,
+                        ], fn($val) => !is_null($val) && $val !== ''));
+                    }
                 }
             }
 
@@ -54,6 +68,7 @@ class DebtService
                 'borrower_name' => $borrowerName,
                 'borrower_phone' => $borrowerPhone,
                 'borrower_type' => $data['borrower_type'] ?? Debt::TYPE_SUPPLIER,
+                'loan_category' => $data['loan_category'] ?? Debt::CATEGORY_MODAL,
                 'user_id' => $user->id,
                 'date' => $date,
                 'due_date' => !empty($data['due_date']) ? Carbon::parse($data['due_date']) : null,
@@ -205,18 +220,26 @@ class DebtService
 
     public function generateDebtNumber(Carbon $date): string
     {
-        $prefix = 'HTG-' . $date->format('ymd') . '-';
-        $latest = Debt::where('debt_number', 'LIKE', $prefix . '%')->orderBy('id', 'desc')->value('debt_number');
-        $num = $latest ? ((int) substr($latest, strlen($prefix)) + 1) : 1;
-        return $prefix . str_pad((string) $num, 4, '0', STR_PAD_LEFT);
+        $prefix = 'PPJ-BON-' . $date->format('ymd') . '-';
+        $latest = Debt::where('debt_number', 'LIKE', $prefix . '%')
+            ->orWhere('debt_number', 'LIKE', 'BON-' . $date->format('ymd') . '-%')
+            ->orWhere('debt_number', 'LIKE', 'PPJ-HTG-' . $date->format('ymd') . '-%')
+            ->orderBy('id', 'desc')
+            ->value('debt_number');
+        $num = $latest ? ((int) substr($latest, strrpos($latest, '-') + 1) + 1) : 1;
+        return $prefix . str_pad((string) $num, 3, '0', STR_PAD_LEFT);
     }
 
     public function generatePaymentNumber(Carbon $date): string
     {
-        $prefix = 'BYR-' . $date->format('ymd') . '-';
-        $latest = DebtPayment::where('payment_number', 'LIKE', $prefix . '%')->orderBy('id', 'desc')->value('payment_number');
-        $num = $latest ? ((int) substr($latest, strlen($prefix)) + 1) : 1;
-        return $prefix . str_pad((string) $num, 4, '0', STR_PAD_LEFT);
+        $prefix = 'PPJ-BYR-' . $date->format('ymd') . '-';
+        $latest = DebtPayment::where('payment_number', 'LIKE', $prefix . '%')
+            ->orWhere('payment_number', 'LIKE', 'BAYAR-' . $date->format('ymd') . '-%')
+            ->orWhere('payment_number', 'LIKE', 'BYR-' . $date->format('ymd') . '-%')
+            ->orderBy('id', 'desc')
+            ->value('payment_number');
+        $num = $latest ? ((int) substr($latest, strrpos($latest, '-') + 1) + 1) : 1;
+        return $prefix . str_pad((string) $num, 3, '0', STR_PAD_LEFT);
     }
 }
 

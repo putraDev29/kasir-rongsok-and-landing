@@ -75,4 +75,70 @@ class BusinessSetting extends Model
 
         return static::hasLogo() ? asset($logo) : null;
     }
+
+    /**
+     * Determine if an owner signature image is configured and exists on disk.
+     */
+    public static function hasOwnerSignature(): bool
+    {
+        $sig = static::get('owner_signature');
+        if (empty($sig)) {
+            return false;
+        }
+
+        return file_exists(public_path($sig))
+            || file_exists(base_path('../' . $sig))
+            || file_exists(base_path('public/' . $sig));
+    }
+
+    /**
+     * Get the accessible public URL for the owner signature.
+     */
+    public static function ownerSignatureUrl(): ?string
+    {
+        $sig = static::get('owner_signature');
+        if (empty($sig) || !static::hasOwnerSignature()) {
+            return null;
+        }
+
+        return asset($sig);
+    }
+
+    /**
+     * Get Base64 data URI of the owner signature for reliable DomPDF rendering.
+     */
+    public static function ownerSignatureBase64(): ?string
+    {
+        $sig = static::get('owner_signature');
+        if (empty($sig)) {
+            return null;
+        }
+
+        $candidates = [
+            public_path($sig),
+            base_path('../' . $sig),
+            base_path('public/' . $sig),
+        ];
+
+        foreach ($candidates as $path) {
+            if (file_exists($path) && is_file($path)) {
+                $mime = @mime_content_type($path) ?: 'image/png';
+                $content = @file_get_contents($path);
+                if ($content !== false) {
+                    return 'data:' . $mime . ';base64,' . base64_encode($content);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the configured commodity/goods term (e.g. "Barang Rongsok", "Material Scrap", "Barang Bekas").
+     */
+    public static function commodityTerm(string $default = 'Barang Rongsok'): string
+    {
+        $term = static::get('commodity_term');
+        return !empty(trim((string) $term)) ? trim((string) $term) : $default;
+    }
 }

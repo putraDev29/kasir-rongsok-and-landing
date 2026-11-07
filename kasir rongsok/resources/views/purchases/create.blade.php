@@ -1,4 +1,4 @@
-@extends('layouts.app', ['header' => 'Kasir Penerimaan Barang Rongsok'])
+@extends('layouts.app', ['header' => 'Kasir Penerimaan Material Scrap & Daur Ulang'])
 
 @section('content')
 <div x-data="cashierPos()" x-init="init()" class="space-y-4">
@@ -12,7 +12,7 @@
             <div>
                 <span class="text-xs font-semibold text-emerald-400 uppercase tracking-wider">POS TIMBANGAN & PEMBELIAN</span>
                 <h2 class="text-xl sm:text-2xl font-black tracking-tight text-white">
-                    Nota Baru: <span class="text-emerald-400 font-mono" x-text="previewInvoice">KB-......-....</span>
+                    Nota Baru: <span class="text-emerald-400 font-mono" x-text="previewInvoice">PPJ-......-....</span>
                 </h2>
             </div>
         </div>
@@ -48,7 +48,7 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                         <div class="flex items-center gap-2">
                             <i data-lucide="sparkles" class="w-4 h-4 text-emerald-600"></i>
-                            <span class="text-xs font-bold uppercase text-slate-800 tracking-wider">Pilih Cepat Barang Rongsok</span>
+                            <span class="text-xs font-bold uppercase text-slate-800 tracking-wider">Pilih Cepat Material Scrap & Daur Ulang</span>
                         </div>
                         <div class="w-full sm:w-64 relative">
                             <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
@@ -60,16 +60,16 @@
                     </div>
 
                     <!-- Category filter tags -->
-                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs" style="scrollbar-width: thin;">
                         <button type="button" @click="selectedCategory = 'all'"
-                                :class="selectedCategory === 'all' ? 'bg-emerald-600 text-white font-semibold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-                                class="px-2.5 py-1 rounded-md shrink-0 transition-colors">
+                                :class="selectedCategory === 'all' ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                                class="px-2.5 py-1 rounded-md shrink-0 transition-colors whitespace-nowrap">
                             Semua
                         </button>
                         <template x-for="cat in categories" :key="cat.id">
                             <button type="button" @click="selectedCategory = cat.id"
-                                    :class="selectedCategory == cat.id ? 'bg-emerald-600 text-white font-semibold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-                                    class="px-2.5 py-1 rounded-md shrink-0 transition-colors"
+                                    :class="selectedCategory == cat.id ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                                    class="px-2.5 py-1 rounded-md shrink-0 transition-colors whitespace-nowrap"
                                     x-text="cat.name">
                             </button>
                         </template>
@@ -77,16 +77,16 @@
 
                     <!-- Fast Click Item Cards -->
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-1">
-                        <template x-for="item in filteredItems()" :key="item.id">
+                        <template x-for="item in filteredItems()" :key="item.unique_key || item.tier_id || item.id">
                             <button type="button" @click="addItem(item)"
                                     class="text-left p-2 rounded-lg border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all group flex flex-col justify-between">
                                 <div>
                                     <div class="text-[11px] font-bold text-slate-900 group-hover:text-emerald-700 truncate" x-text="item.name"></div>
-                                    <div class="text-[10px] text-slate-400" x-text="item.code"></div>
+                                    <div class="text-[10px] text-slate-400 font-mono" x-text="item.code"></div>
                                 </div>
                                 <div class="mt-1 flex items-center justify-between text-[11px] font-bold text-emerald-600">
-                                    <span x-text="formatRp(item.buy_price_per_kg) + '/kg'"></span>
-                                    <span class="text-[10px] text-slate-400 font-normal" x-text="'Stok: ' + (item.current_stock || 0) + 'kg'"></span>
+                                    <span x-text="formatRp(item.price_per_kg || item.buy_price_per_kg) + '/' + (item.unit_type || 'kg')"></span>
+                                    <span class="text-[10px] text-slate-400 font-mono font-normal" x-text="'Stok: ' + formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg')"></span>
                                 </div>
                             </button>
                         </template>
@@ -100,25 +100,53 @@
                             <span class="w-6 h-6 rounded-md bg-emerald-600 text-white text-xs font-bold flex items-center justify-center shadow-xs" x-text="rows.length">1</span>
                             <span class="text-xs font-bold uppercase tracking-wider text-slate-800">Daftar Timbangan Masuk</span>
                         </div>
-                        <button type="button" @click="addNewEmptyRow()" 
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all">
-                            <i data-lucide="plus" class="w-4 h-4"></i>
-                            <span>Tambah Baris (+F2)</span>
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button type="button" @click="addNewItemRow()" 
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition-all shadow-2xs">
+                                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                <span>+ Input Barang Baru</span>
+                            </button>
+                            <button type="button" @click="addNewEmptyRow()" 
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>Tambah Baris (+F2)</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Scrollable Items Container (Scroll saat barang melebihi layar) -->
                     <div class="p-3 space-y-2.5 max-h-[460px] overflow-y-auto bg-slate-100/60" style="scrollbar-width: thin;">
                         <template x-for="(row, index) in rows" :key="row.uid">
                             <div class="bg-white rounded-xl border border-slate-200 shadow-xs hover:border-emerald-400 transition-all p-3 space-y-2">
-                                <!-- BARIS 1: NAMA BARANG & JENIS / VARIAN -->
-                                <div class="flex items-center gap-2">
-                                    <!-- Nomor Urut -->
-                                    <span class="w-6 h-6 rounded-md bg-slate-800 text-white font-mono font-bold text-xs flex items-center justify-center shrink-0 shadow-xs" x-text="index + 1">1</span>
+                                <!-- HEADER ROW: Row # & Mode Toggle (Sama seperti Tambah Pemasok Baru) -->
+                                <div class="flex items-center justify-between pb-1 border-b border-slate-100">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-5 h-5 rounded-md bg-slate-800 text-white font-mono font-bold text-[10px] flex items-center justify-center shadow-xs" x-text="index + 1">1</span>
+                                        <span x-show="!row.is_new" class="text-[11px] font-bold text-slate-700">Material Scrap & Daur Ulang</span>
+                                        <span x-show="row.is_new" style="display: none;" class="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                            Input Barang Baru (Auto Simpan ke Master)
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <!-- Indicator for multiple price tiers / accumulated weight -->
+                                        <template x-if="hasMultiplePrices(row)">
+                                            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                                                📦 Akumulasi <span x-text="getRowBaseName(row)"></span>: <strong x-text="formatNum(getItemAccumulatedWeight(row)) + ' ' + (row.unit_type || 'kg')"></strong>
+                                            </span>
+                                        </template>
+                                        <button type="button" @click="toggleRowItemMode(row)" 
+                                                class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline inline-flex items-center gap-1">
+                                            <span x-text="row.is_new ? '← Pilih dari Master Barang' : '+ Tambah Barang Baru'"></span>
+                                        </button>
+                                    </div>
+                                </div>
 
-                                    <!-- Pilihan Barang Rongsok (Searchable Combobox) -->
-                                    <div class="flex-1 min-w-0 relative" @click.outside="row.dropdown_open = false">
-                                        <input type="hidden" :name="'items[' + index + '][scrap_item_id]'" :value="row.scrap_item_id" required>
+                                <!-- BARIS 1: NAMA BARANG / MODE SELEKSI & JENIS / VARIAN -->
+                                <div class="flex items-center gap-2">
+                                    <!-- Mode 1: Searchable Combobox Master Barang -->
+                                    <div x-show="!row.is_new" class="flex-1 min-w-0 relative" @click.outside="row.dropdown_open = false">
+                                        <input type="hidden" :name="'items[' + index + '][scrap_item_id]'" :value="row.scrap_item_id" :disabled="row.is_new">
 
                                         <div class="relative">
                                             <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
@@ -129,8 +157,8 @@
                                                    x-model="row.search_text"
                                                    @focus="row.dropdown_open = true"
                                                    @input="row.dropdown_open = true"
-                                                   placeholder="Cari / pilih barang rongsok..."
-                                                   required
+                                                   placeholder="Cari / pilih material scrap & daur ulang..."
+                                                   :required="!row.is_new"
                                                    class="w-full pl-8 pr-14 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-bold text-slate-900 bg-white shadow-2xs">
 
                                             <!-- Quick Clear & Caret Icons -->
@@ -161,31 +189,107 @@
                                              class="absolute z-50 left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-white rounded-xl border border-slate-200 shadow-xl divide-y divide-slate-100"
                                              style="display: none;">
                                             
-                                            <template x-for="item in filteredMasterItems(row.search_text)" :key="item.id">
+                                            <template x-for="item in filteredMasterItems(row.search_text)" :key="item.unique_key || item.tier_id || item.id">
                                                 <button type="button" 
                                                         @click="selectRowItem(row, item, index)"
                                                         class="w-full text-left px-3 py-2 hover:bg-emerald-50 flex items-center justify-between transition-colors"
-                                                        :class="{ 'bg-emerald-50/70': row.scrap_item_id == item.id }">
+                                                        :class="{ 'bg-emerald-50/70': (row.tier_id ? (row.tier_id === item.tier_id) : (row.scrap_item_id == item.id && row.price_per_kg == item.price_per_kg)) }">
                                                     <div class="min-w-0 pr-2">
                                                         <div class="text-xs font-bold text-slate-900 truncate" x-text="item.name"></div>
-                                                        <div class="text-[10px] text-slate-500 font-mono" x-text="item.code + (item.category ? ' • ' + item.category.name : '')"></div>
+                                                        <div class="text-[10px] text-slate-500 font-mono">
+                                                            <span x-text="item.code"></span>
+                                                            <span x-show="item.category_name || (item.category && item.category.name)" x-text="' • ' + (item.category_name || (item.category && item.category.name))"></span>
+                                                            <span class="text-emerald-700 font-semibold" x-text="' • Stok: ' + formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg')"></span>
+                                                        </div>
                                                     </div>
                                                     <div class="text-right shrink-0">
-                                                        <div class="text-[11px] font-mono font-bold text-emerald-700" x-text="formatRp(item.buy_price_per_kg) + '/' + (item.unit_type || 'kg')"></div>
+                                                        <div class="text-[11px] font-mono font-bold text-emerald-700" x-text="formatRp(item.price_per_kg || item.buy_price_per_kg) + '/' + (item.unit_type || 'kg')"></div>
                                                     </div>
                                                 </button>
                                             </template>
 
+                                            <!-- Quick Add Button if not found -->
                                             <template x-if="filteredMasterItems(row.search_text).length === 0">
-                                                <div class="p-3 text-center text-xs text-slate-400">
-                                                    Tidak ada barang dengan kata kunci "<span class="font-bold text-slate-700" x-text="row.search_text"></span>"
+                                                <div class="p-3 text-center space-y-2">
+                                                    <p class="text-xs text-slate-500">Tidak ada barang dengan kata kunci "<span class="font-bold text-slate-700" x-text="row.search_text"></span>"</p>
+                                                    <button type="button" 
+                                                            @click="addNewItemToRow(row, row.search_text)"
+                                                            class="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs inline-flex items-center gap-1">
+                                                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                                        <span x-text="'+ Tambah &quot;' + row.search_text + '&quot; sebagai Barang Baru'"></span>
+                                                    </button>
+                                                </div>
+                                            </template>
+
+                                            <!-- Option to add as new even when matching results exist -->
+                                            <template x-if="filteredMasterItems(row.search_text).length > 0 && row.search_text && !isExactMatchMaster(row.search_text)">
+                                                <div class="p-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                                                    <span class="text-[10px] text-slate-500 truncate max-w-[200px]">Barang tidak ada di daftar?</span>
+                                                    <button type="button"
+                                                            @click="addNewItemToRow(row, row.search_text)"
+                                                            class="px-2.5 py-1 text-[11px] font-bold rounded-md bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs inline-flex items-center gap-1 shrink-0">
+                                                        <i data-lucide="plus" class="w-3 h-3"></i>
+                                                        <span>+ Input Barang Baru</span>
+                                                    </button>
                                                 </div>
                                             </template>
                                         </div>
                                     </div>
 
+                                    <!-- Mode 2: Input Manual Barang Baru (Sama seperti Tambah Pemasok Baru) -->
+                                    <div x-show="row.is_new" style="display: none;" class="flex-1 min-w-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                        <input type="hidden" :name="'items[' + index + '][scrap_item_id]'" value="__new__" :disabled="!row.is_new">
+                                        
+                                        <div class="flex-1 relative">
+                                            <input type="text" 
+                                                   :name="'items[' + index + '][new_item_name]'" 
+                                                   x-model="row.new_item_name" 
+                                                   placeholder="Ketik nama material / barang baru..."
+                                                   :required="row.is_new"
+                                                   class="w-full py-1.5 px-3 text-xs rounded-lg border border-emerald-500 focus:ring-2 focus:ring-emerald-500 font-bold text-slate-900 bg-emerald-50/30">
+                                        </div>
+
+                                        <div class="w-56 sm:w-64 shrink-0">
+                                            <!-- Mode Pilih Kategori dari Master -->
+                                            <div x-show="!row.is_new_category" class="flex items-center gap-1">
+                                                <select :name="'items[' + index + '][category_id]'" 
+                                                        x-model="row.category_id" 
+                                                        @change="if (row.category_id === '__new__') { row.is_new_category = true; row.new_category_name = ''; }"
+                                                        class="w-full py-1.5 px-2 text-xs rounded-lg border border-emerald-400 bg-white font-medium text-slate-800 focus:ring-1 focus:ring-emerald-500">
+                                                    <option value="">-- Kategori (Opsional) --</option>
+                                                    <template x-for="cat in categories" :key="cat.id">
+                                                        <option :value="cat.id" x-text="cat.name" :selected="row.category_id == cat.id"></option>
+                                                    </template>
+                                                    <option value="__new__">✨ + Kategori Baru...</option>
+                                                </select>
+                                                <button type="button" 
+                                                        @click="row.is_new_category = true; row.category_id = '__new__'; row.new_category_name = '';" 
+                                                        class="px-2 py-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-md whitespace-nowrap shrink-0 transition-colors" 
+                                                        title="Ketik nama kategori baru">
+                                                    + Baru
+                                                </button>
+                                            </div>
+
+                                            <!-- Mode Input Kategori Baru -->
+                                            <div x-show="row.is_new_category" style="display: none;" class="flex items-center gap-1">
+                                                <input type="hidden" :name="'items[' + index + '][category_id]'" value="__new__" :disabled="!row.is_new_category">
+                                                <input type="text" 
+                                                       :name="'items[' + index + '][new_category_name]'" 
+                                                       x-model="row.new_category_name" 
+                                                       placeholder="Ketik kategori baru..."
+                                                       class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-emerald-500 bg-emerald-50/50 font-bold text-slate-900 focus:ring-1 focus:ring-emerald-500">
+                                                <button type="button" 
+                                                        @click="row.is_new_category = false; row.category_id = ''; row.new_category_name = '';" 
+                                                        class="px-2 py-1.5 text-[10px] font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded border border-slate-300 shrink-0 transition-colors"
+                                                        title="Batal / Pilih dari daftar kategori">
+                                                    ✕ Batal
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <!-- Jenis / Varian Manual -->
-                                    <div class="w-40 sm:w-56 shrink-0">
+                                    <div class="w-36 sm:w-48 shrink-0">
                                         <input type="text" 
                                                :name="'items[' + index + '][item_type_name]'" 
                                                x-model="row.item_type_name" 
@@ -193,13 +297,24 @@
                                                class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800 bg-white">
                                     </div>
 
-                                    <!-- Tombol Hapus -->
+                                    <!-- Tombol Hapus: Sangat jelas dan muncul dengan SVG murni ketika baris > 1 -->
                                     <button type="button" @click="removeRow(index)" 
                                             :disabled="rows.length <= 1"
-                                            class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-20 shrink-0"
-                                            title="Hapus baris item">
-                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            :class="rows.length > 1 
+                                                ? 'text-red-600 bg-red-50 hover:bg-red-200 hover:text-red-800 hover:border-red-400 active:bg-red-300 active:text-red-950 active:border-red-500 border-red-300 shadow-2xs cursor-pointer' 
+                                                : 'text-slate-300 bg-slate-100 border-slate-200 cursor-not-allowed opacity-30'"
+                                            class="p-1.5 rounded-lg border transition-all shrink-0 flex items-center justify-center focus:outline-hidden focus:ring-2 focus:ring-red-400"
+                                            title="Hapus baris timbangan ini">
+                                        <svg class="w-4 h-4 transition-colors" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
                                     </button>
+                                </div>
+
+                                <!-- Helper Text for New Item Mode -->
+                                <div x-show="row.is_new" style="display: none;" class="px-1 text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                                    <i data-lucide="sparkles" class="w-3 h-3 text-emerald-500"></i>
+                                    <span>Barang baru otomatis tersimpan ke Master Data saat transaksi disimpan. Masukkan harga beli pada kolom harga di bawah.</span>
                                 </div>
 
                                 <!-- BARIS 2: VALUE ANGKA & SATUAN (TETAP 1 BARIS PENUH) -->
@@ -240,7 +355,7 @@
                                                        :name="'items[' + index + '][gross_weight]'" 
                                                        x-model.number="row.gross_weight" 
                                                        @input="onGrossOrQtyChanged(row)"
-                                                       placeholder="0.00"
+                                                       placeholder="0"
                                                        required
                                                        class="w-full py-1.5 px-1.5 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono font-bold text-slate-900 bg-white">
                                                 <input type="hidden" :name="'items[' + index + '][quantity]'" value="1">
@@ -290,7 +405,7 @@
                                                     <input type="number" :step="isPcsUnit(row) ? '1' : '0.01'" min="0" 
                                                            x-model.number="row.tare_weight" 
                                                            @input="onTareWeightChanged(row)"
-                                                           placeholder="0.00"
+                                                           placeholder="0"
                                                            class="w-full py-1.5 px-1.5 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono text-slate-700 bg-white">
                                                 </div>
                                                 <div class="text-[9px] text-right font-mono text-slate-400 mt-0.5 truncate"
@@ -320,18 +435,31 @@
 
                                     <!-- 5. Harga Beli (Rp) -->
                                     <div>
-                                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 whitespace-nowrap">Harga Beli *</label>
+                                        <div class="flex items-center justify-between mb-0.5">
+                                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Harga Beli *</label>
+                                            <template x-if="getMasterPrice(row) > 0">
+                                                <span class="text-[9px] text-slate-400 font-mono" :title="'Harga master: ' + formatRp(getMasterPrice(row))">
+                                                    Mstr: <span x-text="formatRp(getMasterPrice(row))"></span>
+                                                </span>
+                                            </template>
+                                        </div>
                                         <input type="number" step="100" min="0" 
-                                               :max="getMasterPrice(row) > 0 ? getMasterPrice(row) : null"
+                                               :max="!isOwner && getMasterPrice(row) > 0 ? getMasterPrice(row) : null"
                                                :name="'items[' + index + '][price_per_kg]'" 
                                                x-model.number="row.price_per_kg" 
                                                @input="validatePrice(row)"
                                                @change="validatePrice(row)"
                                                required
                                                class="w-full py-1.5 px-1.5 text-xs text-right rounded-lg border font-mono font-bold transition-colors"
-                                               :class="getMasterPrice(row) > 0 && row.price_per_kg > getMasterPrice(row) 
+                                               :class="!isOwner && getMasterPrice(row) > 0 && row.price_per_kg > getMasterPrice(row) 
                                                    ? 'border-red-500 bg-red-50 text-red-700' 
                                                    : 'border-slate-300 focus:ring-2 focus:ring-emerald-500 text-slate-900 bg-white'">
+                                        <template x-if="!isOwner && getMasterPrice(row) > 0">
+                                            <p class="text-[9px] text-amber-600 mt-0.5 leading-tight font-medium">Maks: <span x-text="formatRp(getMasterPrice(row))"></span></p>
+                                        </template>
+                                        <template x-if="isOwner">
+                                            <p class="text-[9px] text-emerald-600 mt-0.5 leading-tight font-medium">Bebas edit (Owner)</p>
+                                        </template>
                                     </div>
 
                                     <!-- 6. Subtotal (Rp) -->
@@ -348,28 +476,49 @@
                     </div>
 
                     <!-- Bottom Bar: Tambah Baris & Rekap Total -->
-                    <div class="p-3 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
-                        <button type="button" @click="addNewEmptyRow()" 
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm transition-all">
-                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                            <span>Tambah Item Barang Lain (+F2)</span>
-                        </button>
+                    <div class="p-3 bg-slate-50 border-t border-slate-200 space-y-2">
+                        <!-- Commodities accumulation summary if any commodity has multiple prices -->
+                        <template x-if="multiPriceCommodities().length > 0">
+                            <div class="p-2 bg-emerald-50 rounded-lg border border-emerald-200 text-xs">
+                                <div class="text-[10px] font-bold uppercase text-emerald-900 tracking-wider mb-1 flex items-center gap-1">
+                                    <i data-lucide="layers" class="w-3.5 h-3.5 text-emerald-700"></i>
+                                    <span>Akumulasi Komoditas Barang (Tercatat Dalam Beberapa Harga):</span>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <template x-for="c in multiPriceCommodities()" :key="c.name">
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white border border-emerald-300 font-mono text-[11px] text-slate-800 shadow-2xs">
+                                            <strong x-text="c.name"></strong>: 
+                                            <span class="font-bold text-emerald-700" x-text="formatNum(c.totalWeight) + ' ' + c.unit"></span>
+                                            <span class="text-slate-400" x-text="'(' + formatRp(c.totalSubtotal) + ')'"></span>
+                                        </span>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
 
-                        <div class="text-xs text-slate-600 flex items-center gap-3 bg-white px-2.5 py-1 rounded-lg border border-slate-200">
-                            <span>Item: <strong class="text-slate-900 font-mono" x-text="rows.length"></strong></span>
-                            <template x-if="totalGrossWeight() > 0 && totalTareWeight() > 0">
-                                <span>Kotor: <strong class="text-slate-700 font-mono" x-text="formatNum(totalGrossWeight()) + ' kg'"></strong></span>
-                            </template>
-                            <template x-if="totalTareWeight() > 0">
-                                <span>Tara: <strong class="text-red-600 font-mono font-bold" x-text="'-' + formatNum(totalTareWeight()) + ' kg'"></strong></span>
-                            </template>
-                            <template x-if="totalNetWeight() > 0">
-                                <span>Bersih: <strong class="text-emerald-700 font-mono font-bold" x-text="formatNum(totalNetWeight()) + ' kg'"></strong></span>
-                            </template>
-                            <template x-if="totalNetWeight() <= 0 && totalPcsQty() > 0">
-                                <span>Satuan: <strong class="text-amber-700 font-mono font-bold" x-text="formatInteger(totalPcsQty()) + ' pcs'"></strong></span>
-                            </template>
-                            <span>Subtotal: <strong class="text-slate-900 font-mono font-black" x-text="formatRp(subtotalAmount())"></strong></span>
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <button type="button" @click="addNewEmptyRow()" 
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm transition-all">
+                                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                                <span>Tambah Item Barang Lain (+F2)</span>
+                            </button>
+
+                            <div class="text-xs text-slate-600 flex items-center gap-3 bg-white px-2.5 py-1 rounded-lg border border-slate-200">
+                                <span>Item: <strong class="text-slate-900 font-mono" x-text="rows.length"></strong></span>
+                                <template x-if="totalGrossWeight() > 0 && totalTareWeight() > 0">
+                                    <span>Kotor: <strong class="text-slate-700 font-mono" x-text="formatNum(totalGrossWeight()) + ' kg'"></strong></span>
+                                </template>
+                                <template x-if="totalTareWeight() > 0">
+                                    <span>Tara: <strong class="text-red-600 font-mono font-bold" x-text="'-' + formatNum(totalTareWeight()) + ' kg'"></strong></span>
+                                </template>
+                                <template x-if="totalNetWeight() > 0">
+                                    <span>Bersih: <strong class="text-emerald-700 font-mono font-bold" x-text="formatNum(totalNetWeight()) + ' kg'"></strong></span>
+                                </template>
+                                <template x-if="totalNetWeight() <= 0 && totalPcsQty() > 0">
+                                    <span>Satuan: <strong class="text-amber-700 font-mono font-bold" x-text="formatInteger(totalPcsQty()) + ' pcs'"></strong></span>
+                                </template>
+                                <span>Subtotal: <strong class="text-slate-900 font-mono font-black" x-text="formatRp(subtotalAmount())"></strong></span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -433,7 +582,7 @@
                                 <!-- Quick Clear & Caret Icons -->
                                 <div class="absolute inset-y-0 right-0 pr-2 flex items-center gap-1">
                                     <button type="button" 
-                                            x-show="supplierSearchQuery && supplierSearchQuery !== 'Umum / Tunai'"
+                                            x-show="supplierSearchQuery"
                                             @click="clearSupplierSelection()" 
                                             class="text-slate-400 hover:text-slate-600 p-0.5 rounded"
                                             title="Reset Pencarian">
@@ -458,22 +607,15 @@
                                  class="absolute z-50 left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-white rounded-xl border border-slate-200 shadow-xl divide-y divide-slate-100"
                                  style="display: none;">
                                 
-                                <!-- Option 1: Pemasok Harian / Umum -->
-                                <button type="button" 
-                                        @click="selectSupplier(null)"
-                                        class="w-full text-left px-3 py-2 hover:bg-emerald-50 flex items-center justify-between transition-colors"
-                                        :class="{ 'bg-emerald-50/70 font-bold': !selectedSupplierId }">
-                                    <div>
-                                        <div class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                                            <span>Umum / Tunai</span>
-                                            <span class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-slate-100 text-slate-600">Pemasok Harian</span>
-                                        </div>
-                                        <div class="text-[10px] text-slate-500">Transaksi reguler non-member</div>
-                                    </div>
-                                    <template x-if="!selectedSupplierId">
-                                        <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i>
-                                    </template>
-                                </button>
+                                <!-- Opsi: Kosongkan Pilihan Pemasok -->
+                                <template x-if="selectedSupplierId || supplierName">
+                                    <button type="button" 
+                                            @click="clearSupplierSelection()"
+                                            class="w-full text-left px-3 py-2 hover:bg-rose-50 text-rose-600 text-xs font-semibold flex items-center gap-1.5 transition-colors border-b border-slate-100">
+                                        <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
+                                        <span>Kosongkan Nama Pemasok</span>
+                                    </button>
+                                </template>
 
                                 <!-- Option List: Filtered Master Suppliers -->
                                 <template x-for="sup in filteredSuppliers()" :key="sup.id">
@@ -654,17 +796,22 @@
                         </div>
 
                         <!-- Mode 1: Searchable Dropdown Metode Pembayaran Tersimpan -->
-                        <div x-show="!isManualPaymentMethod" class="relative" @click.outside="paymentMethodDropdownOpen = false">
+                        <div x-show="!isManualPaymentMethod" class="relative" @click.outside="closePaymentMethodDropdown()">
                             <input type="hidden" name="payment_method_id" :value="paymentMethodId" :disabled="isManualPaymentMethod">
 
                             <div class="relative">
                                 <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
-                                    <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    </svg>
                                 </span>
 
                                 <input type="text"
+                                       x-ref="paymentMethodInput"
                                        x-model="paymentMethodSearchQuery"
-                                       @focus="paymentMethodDropdownOpen = true"
+                                       @focus="paymentMethodDropdownOpen = true; $event.target.select()"
+                                       @click="paymentMethodDropdownOpen = true"
                                        @input="paymentMethodDropdownOpen = true"
                                        placeholder="Cari metode pembayaran (Tunai, BCA, BRI, Mandiri...)"
                                        class="w-full pl-8 pr-14 py-2 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-900 bg-white shadow-2xs">
@@ -672,15 +819,21 @@
                                 <div class="absolute inset-y-0 right-0 pr-2 flex items-center gap-1">
                                     <button type="button" 
                                             x-show="paymentMethodSearchQuery"
-                                            @click="paymentMethodSearchQuery = ''; paymentMethodDropdownOpen = true" 
-                                            class="text-slate-400 hover:text-slate-600 p-0.5 rounded"
+                                            @click="paymentMethodSearchQuery = ''; paymentMethodDropdownOpen = true; $refs.paymentMethodInput?.focus()" 
+                                            class="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
                                             title="Reset Pencarian">
-                                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
                                     </button>
                                     <button type="button" 
                                             @click="paymentMethodDropdownOpen = !paymentMethodDropdownOpen"
-                                            class="text-slate-400 hover:text-slate-600 p-0.5 rounded">
-                                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': paymentMethodDropdownOpen }"></i>
+                                            class="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+                                            title="Buka / Tutup Daftar Metode">
+                                        <svg class="w-3.5 h-3.5 transition-transform duration-200" :class="{ 'rotate-180': paymentMethodDropdownOpen }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
                                     </button>
                                 </div>
                             </div>
@@ -699,16 +852,18 @@
                                 <template x-for="pm in filteredPaymentMethods()" :key="pm.id">
                                     <button type="button" 
                                             @click="selectPaymentMethod(pm)"
-                                            class="w-full text-left px-3 py-2 hover:bg-emerald-50 flex items-center justify-between transition-colors"
-                                            :class="{ 'bg-emerald-50/70 font-bold': paymentMethodId == pm.id }">
+                                            class="w-full text-left px-3 py-2.5 hover:bg-emerald-50 flex items-center justify-between transition-colors cursor-pointer group"
+                                            :class="{ 'bg-emerald-50/80 font-bold text-emerald-950': paymentMethodId == pm.id }">
                                         <div class="flex items-center gap-2">
-                                            <span class="text-xs text-slate-900" x-text="pm.name"></span>
-                                            <span class="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase"
-                                                  :class="isTransferMethod(pm) ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'"
-                                                  x-text="isTransferMethod(pm) ? 'Transfer' : 'Tunai'"></span>
+                                            <span class="text-xs text-slate-900 group-hover:text-emerald-900" x-text="pm.name"></span>
+                                            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase border"
+                                                  :class="getMethodBadgeClass(pm)"
+                                                  x-text="getMethodBadge(pm)"></span>
                                         </div>
                                         <template x-if="paymentMethodId == pm.id">
-                                            <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                            <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                            </svg>
                                         </template>
                                     </button>
                                 </template>
@@ -718,8 +873,11 @@
                                         <p class="text-xs text-slate-500">Tidak ada metode pembayaran "<span class="font-bold text-slate-800" x-text="paymentMethodSearchQuery"></span>"</p>
                                         <button type="button" 
                                                 @click="isManualPaymentMethod = true; newPaymentMethodName = paymentMethodSearchQuery; paymentMethodDropdownOpen = false;"
-                                                class="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs inline-flex items-center gap-1">
-                                            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                                class="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs inline-flex items-center gap-1 cursor-pointer">
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                            </svg>
                                             <span x-text="'+ Tambah &quot;' + paymentMethodSearchQuery + '&quot; sebagai Metode Baru'"></span>
                                         </button>
                                     </div>
@@ -739,14 +897,17 @@
 
                         <!-- Bank Transfer Input (Task 11 & Update: Nama Pemilik Rekening & No Rekening) -->
                         <div x-show="isTransferPayment()" class="mt-2.5 p-2.5 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
-                            <div class="text-[11px] font-bold text-blue-900 flex items-center gap-1">
-                                <i data-lucide="credit-card" class="w-3.5 h-3.5 text-blue-600"></i>
-                                <span>Detail Rekening Pembayaran (Dicetak di Nota):</span>
+                            <div class="text-[11px] font-bold text-blue-900 flex items-center justify-between">
+                                <div class="flex items-center gap-1">
+                                    <i data-lucide="credit-card" class="w-3.5 h-3.5 text-blue-600"></i>
+                                    <span>Detail Rekening Bank (Dicetak di Nota):</span>
+                                </div>
+                                <span class="text-[9px] text-blue-700 font-medium">Bisa transfer ke pemasok / kasir</span>
                             </div>
-                            <div class="grid grid-cols-2 gap-2">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                 <div>
-                                    <label class="block text-[10px] font-bold text-blue-900 mb-0.5">Nama Pemilik (A/N)</label>
-                                    <input type="text" name="custom_account_name" x-model="customAccountName" placeholder="Nama Pemilik Rekening"
+                                    <label class="block text-[10px] font-bold text-blue-900 mb-0.5">Nama Bank</label>
+                                    <input type="text" name="custom_bank" x-model="customBank" placeholder="BCA / BRI / Mandiri"
                                            class="w-full py-1.5 px-2 text-xs rounded-lg border border-blue-300 focus:ring-2 focus:ring-blue-500 bg-white font-medium text-slate-800">
                                 </div>
                                 <div>
@@ -754,6 +915,22 @@
                                     <input type="text" name="custom_account_no" x-model="customAccountNo" placeholder="No. Rekening"
                                            class="w-full py-1.5 px-2 text-xs rounded-lg border border-blue-300 focus:ring-2 focus:ring-blue-500 bg-white font-mono text-slate-800">
                                 </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-blue-900 mb-0.5">Nama Pemilik (A/N)</label>
+                                    <input type="text" name="custom_account_name" x-model="customAccountName" placeholder="Nama Pemilik Rekening"
+                                           class="w-full py-1.5 px-2 text-xs rounded-lg border border-blue-300 focus:ring-2 focus:ring-blue-500 bg-white font-medium text-slate-800">
+                                </div>
+                            </div>
+                            <!-- Opsi Simpan ke Data Pemasok & User -->
+                            <div class="pt-1 border-t border-blue-200 flex flex-wrap items-center gap-3 text-[10.5px]">
+                                <label class="inline-flex items-center gap-1.5 text-blue-900 font-medium cursor-pointer">
+                                    <input type="checkbox" name="save_to_supplier_bank" value="1" checked class="rounded border-blue-300 text-blue-600 focus:ring-blue-500">
+                                    <span>Simpan / update rekening ke data pemasok</span>
+                                </label>
+                                <label class="inline-flex items-center gap-1.5 text-blue-900 font-medium cursor-pointer">
+                                    <input type="checkbox" name="save_to_user_bank" value="1" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500">
+                                    <span>Simpan ke profil user kasir saya</span>
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -859,16 +1036,15 @@
 <script>
 function cashierPos() {
     return {
+        isOwner: {{ (auth()->user()->isOwner() || auth()->user()->isSuperAdmin()) ? 'true' : 'false' }},
+        isSuperAdmin: {{ (auth()->user()->isOwner() || auth()->user()->isSuperAdmin()) ? 'true' : 'false' }},
+        userRole: '{{ auth()->user()->role }}',
         masterItems: @json($scrapItems),
         suppliersList: @json($suppliers),
         paymentMethodsList: @json($paymentMethods),
-        categories: [
-            { id: 1, name: 'Besi & Logam' },
-            { id: 2, name: 'Logam Non-Besi' },
-            { id: 3, name: 'Kertas & Kardus' },
-            { id: 4, name: 'Plastik & Botol' },
-            { id: 5, name: 'Aki Bekas' },
-        ],
+        categories: (@json($categories ?? []).length > 0)
+            ? @json($categories ?? [])
+            : [...new Map((@json($scrapItems) || []).map(i => [i.category?.id || i.category_id, { id: i.category?.id || i.category_id, name: i.category?.name || 'Kategori ' + (i.category_id || '') }])).values()].filter(c => c.id),
         selectedCategory: 'all',
         itemSearch: '',
         previewInvoice: 'PPJ-{{ \App\Services\FormatHelper::toRomanMonth(date("n")) }}{{ date("y") }}-XXXX',
@@ -879,13 +1055,17 @@ function cashierPos() {
         paymentMethodDropdownOpen: false,
         isManualPaymentMethod: false,
         newPaymentMethodName: '',
+        customBank: '',
         customAccountName: '',
         customAccountNo: '',
+        currentUserBankName: '{{ addslashes(auth()->user()->bank_name ?? '') }}',
+        currentUserBankHolder: '{{ addslashes(auth()->user()->bank_account_name ?? '') }}',
+        currentUserBankNo: '{{ addslashes(auth()->user()->bank_account_number ?? '') }}',
 
         selectedSupplierId: '',
         isManualSupplier: false,
-        supplierName: 'Umum / Tunai',
-        supplierSearchQuery: 'Umum / Tunai',
+        supplierName: '',
+        supplierSearchQuery: '',
         supplierDropdownOpen: false,
         supplierPhone: '',
         supplierAddress: '',
@@ -897,7 +1077,7 @@ function cashierPos() {
         isSubmitting: false,
 
         rows: [
-            { uid: 1, scrap_item_id: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', tare_percent: '', tare_mode: 'kg', price_per_kg: 0 }
+            { uid: 1, scrap_item_id: '', is_new: false, new_item_name: '', category_id: '', is_new_category: false, new_category_name: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', tare_percent: '', tare_mode: 'kg', price_per_kg: 0 }
         ],
 
         init() {
@@ -924,18 +1104,24 @@ function cashierPos() {
                 const s = this.itemSearch.toLowerCase();
                 list = list.filter(item => item.name.toLowerCase().includes(s) || item.code.toLowerCase().includes(s));
             }
-            return list.slice(0, 12);
+            return list.slice(0, 36);
         },
 
         filteredPaymentMethods() {
             if (!this.paymentMethodSearchQuery || this.paymentMethodSearchQuery.trim() === '') {
                 return this.paymentMethodsList;
             }
+            // If query matches the currently active/selected payment method name, show ALL existing options
+            const currentSelected = this.paymentMethodsList.find(pm => pm.id == this.paymentMethodId);
+            if (currentSelected && this.paymentMethodSearchQuery.trim().toLowerCase() === (currentSelected.name || '').trim().toLowerCase()) {
+                return this.paymentMethodsList;
+            }
             const q = this.paymentMethodSearchQuery.toLowerCase().trim();
             return this.paymentMethodsList.filter(pm => {
                 const name = (pm.name || '').toLowerCase();
-                const type = (pm.type || '').toLowerCase();
-                return name.includes(q) || type.includes(q);
+                const code = (pm.code || '').toLowerCase();
+                const bank = (pm.bank_name || '').toLowerCase();
+                return name.includes(q) || code.includes(q) || bank.includes(q);
             });
         },
 
@@ -943,12 +1129,43 @@ function cashierPos() {
             this.paymentMethodId = pm.id;
             this.paymentMethodSearchQuery = pm.name;
             this.paymentMethodDropdownOpen = false;
+            if (pm.bank_name && !this.customBank) {
+                this.customBank = pm.bank_name;
+            }
+            this.refreshIcons();
+        },
+
+        closePaymentMethodDropdown() {
+            this.paymentMethodDropdownOpen = false;
+            if (!this.paymentMethodSearchQuery || this.paymentMethodSearchQuery.trim() === '') {
+                const current = this.paymentMethodsList.find(m => m.id == this.paymentMethodId);
+                if (current) {
+                    this.paymentMethodSearchQuery = current.name;
+                }
+            }
+        },
+
+        getMethodBadge(pm) {
+            if (!pm || !pm.name) return 'Tunai';
+            const name = pm.name.toLowerCase();
+            const code = (pm.code || '').toLowerCase();
+            if (name.includes('transfer') || code.includes('transfer') || name.includes('bank')) return 'Transfer';
+            if (name.includes('qris') || code.includes('qris')) return 'QRIS';
+            return 'Tunai';
+        },
+
+        getMethodBadgeClass(pm) {
+            const b = this.getMethodBadge(pm);
+            if (b === 'Transfer') return 'bg-blue-100 text-blue-800 border-blue-200';
+            if (b === 'QRIS') return 'bg-purple-100 text-purple-800 border-purple-200';
+            return 'bg-emerald-100 text-emerald-800 border-emerald-200';
         },
 
         isTransferMethod(pm) {
             if (!pm || !pm.name) return false;
             const name = pm.name.toLowerCase();
-            return name.includes('transfer') || name.includes('bank');
+            const code = (pm.code || '').toLowerCase();
+            return name.includes('transfer') || name.includes('bank') || code.includes('transfer');
         },
 
         isTransferPayment() {
@@ -962,7 +1179,8 @@ function cashierPos() {
                 return query.includes('transfer') || query.includes('bank');
             }
             const name = (method.name || '').toLowerCase();
-            return name.includes('transfer') || name.includes('bank');
+            const code = (method.code || '').toLowerCase();
+            return name.includes('transfer') || name.includes('bank') || code.includes('transfer');
         },
 
         togglePaymentMethodMode() {
@@ -980,7 +1198,7 @@ function cashierPos() {
         },
 
         filteredSuppliers() {
-            if (!this.supplierSearchQuery || this.supplierSearchQuery.trim() === '' || this.supplierSearchQuery === 'Umum / Tunai') {
+            if (!this.supplierSearchQuery || this.supplierSearchQuery.trim() === '') {
                 return this.suppliersList;
             }
             const q = this.supplierSearchQuery.toLowerCase().trim();
@@ -996,12 +1214,15 @@ function cashierPos() {
         selectSupplier(sup) {
             if (!sup) {
                 this.selectedSupplierId = '';
-                this.supplierName = 'Umum / Tunai';
-                this.supplierSearchQuery = 'Umum / Tunai';
+                this.supplierName = '';
+                this.supplierSearchQuery = '';
                 this.supplierPhone = '';
                 this.supplierAddress = '';
                 this.supplierDebt = 0;
                 this.debtDeductionAmount = 0;
+                this.customBank = '';
+                this.customAccountNo = '';
+                this.customAccountName = '';
             } else {
                 this.selectedSupplierId = sup.id;
                 this.supplierName = sup.name;
@@ -1010,6 +1231,10 @@ function cashierPos() {
                 this.supplierAddress = sup.address || '';
                 this.supplierDebt = parseFloat(sup.total_debt || sup.remaining_debt) || 0;
                 this.debtDeductionAmount = 0;
+                // Tampilkan sesuai data supplier yang dipilih jika ada, jika kosong tetap kosongkan
+                this.customBank = (sup && sup.bank_name) ? sup.bank_name : '';
+                this.customAccountNo = (sup && sup.bank_account_number) ? sup.bank_account_number : '';
+                this.customAccountName = (sup && sup.bank_account_name) ? sup.bank_account_name : '';
             }
             this.supplierDropdownOpen = false;
             this.$nextTick(() => {
@@ -1021,28 +1246,31 @@ function cashierPos() {
 
         clearSupplierSelection() {
             this.selectedSupplierId = '';
-            this.supplierName = 'Umum / Tunai';
+            this.supplierName = '';
             this.supplierSearchQuery = '';
             this.supplierPhone = '';
             this.supplierAddress = '';
             this.supplierDebt = 0;
             this.debtDeductionAmount = 0;
-            this.supplierDropdownOpen = true;
+            this.customBank = '';
+            this.customAccountNo = '';
+            this.customAccountName = '';
+            this.supplierDropdownOpen = false;
         },
 
         toggleSupplierMode() {
             this.isManualSupplier = !this.isManualSupplier;
             if (this.isManualSupplier) {
                 this.selectedSupplierId = '__new__';
-                this.supplierName = (this.supplierSearchQuery && this.supplierSearchQuery !== 'Umum / Tunai') ? this.supplierSearchQuery : '';
+                this.supplierName = this.supplierSearchQuery ? this.supplierSearchQuery : '';
                 this.supplierPhone = '';
                 this.supplierAddress = '';
                 this.supplierDebt = 0;
                 this.debtDeductionAmount = 0;
             } else {
                 this.selectedSupplierId = '';
-                this.supplierName = 'Umum / Tunai';
-                this.supplierSearchQuery = 'Umum / Tunai';
+                this.supplierName = '';
+                this.supplierSearchQuery = '';
                 this.supplierPhone = '';
                 this.supplierAddress = '';
                 this.supplierDebt = 0;
@@ -1058,16 +1286,105 @@ function cashierPos() {
             const q = searchText.toLowerCase().trim();
             return this.masterItems.filter(item => {
                 const name = (item.name || '').toLowerCase();
+                const baseName = (item.base_name || '').toLowerCase();
                 const code = (item.code || '').toLowerCase();
-                const cat = (item.category?.name || '').toLowerCase();
-                return name.includes(q) || code.includes(q) || cat.includes(q);
+                const cat = (item.category?.name || item.category_name || '').toLowerCase();
+                const price = String(item.price_per_kg || item.buy_price_per_kg || '');
+                return name.includes(q) || baseName.includes(q) || code.includes(q) || cat.includes(q) || price.includes(q);
             });
         },
 
+        isExactMatchMaster(text) {
+            if (!text) return false;
+            const q = text.toLowerCase().trim();
+            return this.masterItems.some(i => (i.name || '').toLowerCase() === q || (i.base_name || '').toLowerCase() === q);
+        },
+
+        refreshIcons() {
+            this.$nextTick(() => {
+                if (typeof window.refreshIcons === 'function') {
+                    window.refreshIcons();
+                } else if (window.createIcons && window.lucideIcons) {
+                    window.createIcons({ icons: window.lucideIcons });
+                }
+            });
+        },
+
+        toggleRowItemMode(row) {
+            row.is_new = !row.is_new;
+            if (row.is_new) {
+                row.scrap_item_id = '__new__';
+                row.new_item_name = row.search_text ? row.search_text.split(' (')[0].trim() : '';
+                row.is_new_category = false;
+                row.new_category_name = '';
+                if (!row.category_id && this.selectedCategory !== 'all') {
+                    row.category_id = this.selectedCategory;
+                }
+                row.dropdown_open = false;
+            } else {
+                row.scrap_item_id = '';
+                row.new_item_name = '';
+                row.search_text = '';
+                row.category_id = '';
+                row.is_new_category = false;
+                row.new_category_name = '';
+                row.dropdown_open = true;
+            }
+            this.refreshIcons();
+        },
+
+        addNewItemToRow(row, customName) {
+            row.is_new = true;
+            row.scrap_item_id = '__new__';
+            row.new_item_name = (customName || '').trim();
+            row.search_text = row.new_item_name;
+            row.is_new_category = false;
+            row.new_category_name = '';
+            if (!row.category_id && this.selectedCategory !== 'all') {
+                row.category_id = this.selectedCategory;
+            }
+            row.dropdown_open = false;
+            this.refreshIcons();
+        },
+
+        addNewItemRow() {
+            const lastRow = this.rows[this.rows.length - 1];
+            if (lastRow && !lastRow.scrap_item_id && !lastRow.search_text && !lastRow.gross_weight && (!lastRow.quantity || lastRow.quantity == 1)) {
+                this.addNewItemToRow(lastRow, '');
+            } else {
+                this.rows.push({
+                    uid: Date.now() + Math.random(),
+                    scrap_item_id: '__new__',
+                    is_new: true,
+                    new_item_name: '',
+                    category_id: this.selectedCategory !== 'all' ? this.selectedCategory : '',
+                    is_new_category: false,
+                    new_category_name: '',
+                    search_text: '',
+                    dropdown_open: false,
+                    unit_type: 'kg',
+                    item_type_name: '',
+                    quantity: 1,
+                    gross_weight: '',
+                    tare_weight: '',
+                    tare_percent: '',
+                    tare_mode: 'kg',
+                    price_per_kg: 0
+                });
+            }
+            this.refreshIcons();
+        },
+
         selectRowItem(row, item, index) {
-            row.scrap_item_id = item.id;
+            row.is_new = false;
+            row.new_item_name = '';
+            row.category_id = item.category_id || '';
+            row.is_new_category = false;
+            row.new_category_name = '';
+            row.scrap_item_id = item.scrap_item_id || item.id;
+            row.tier_id = item.tier_id || (item.id + '_' + item.price_per_kg);
             row.search_text = item.name + ' (' + item.code + ')';
-            row.price_per_kg = parseFloat(item.buy_price_per_kg) || 0;
+            row.price_per_kg = parseFloat(item.price_per_kg || item.buy_price_per_kg) || 0;
             if (item.unit_type && item.unit_type !== 'kg') {
                 row.unit_type = item.unit_type;
             } else if (!row.unit_type) {
@@ -1077,15 +1394,17 @@ function cashierPos() {
                 row.tare_mode = row.unit_type || 'kg';
             }
             row.dropdown_open = false;
-            this.$nextTick(() => {
-                if (window.lucide && typeof window.lucide.createIcons === 'function') {
-                    window.lucide.createIcons();
-                }
-            });
+            this.refreshIcons();
         },
 
         clearRowItem(row, index) {
+            row.is_new = false;
+            row.new_item_name = '';
+            row.category_id = '';
+            row.is_new_category = false;
+            row.new_category_name = '';
             row.scrap_item_id = '';
+            row.tier_id = '';
             row.search_text = '';
             row.price_per_kg = 0;
             row.dropdown_open = true;
@@ -1095,6 +1414,12 @@ function cashierPos() {
             this.rows.push({
                 uid: Date.now() + Math.random(),
                 scrap_item_id: '',
+                tier_id: '',
+                is_new: false,
+                new_item_name: '',
+                category_id: '',
+                is_new_category: false,
+                new_category_name: '',
                 search_text: '',
                 dropdown_open: false,
                 unit_type: 'kg',
@@ -1106,27 +1431,37 @@ function cashierPos() {
                 tare_mode: 'kg',
                 price_per_kg: 0
             });
-            this.$nextTick(() => {
-                if (window.lucide && typeof window.lucide.createIcons === 'function') {
-                    window.lucide.createIcons();
-                }
-            });
+            this.refreshIcons();
         },
 
         addItem(item) {
             const itemUnit = item.unit_type || 'kg';
             const itemLabel = item.name + ' (' + item.code + ')';
+            const itemPrice = parseFloat(item.price_per_kg || item.buy_price_per_kg) || 0;
+            const itemTierId = item.tier_id || (item.id + '_' + itemPrice);
             const lastRow = this.rows[this.rows.length - 1];
-            if (lastRow && !lastRow.scrap_item_id && !lastRow.gross_weight && (!lastRow.quantity || lastRow.quantity == 1)) {
-                lastRow.scrap_item_id = item.id;
+            if (lastRow && !lastRow.scrap_item_id && !lastRow.is_new && !lastRow.gross_weight && (!lastRow.quantity || lastRow.quantity == 1)) {
+                lastRow.scrap_item_id = item.scrap_item_id || item.id;
+                lastRow.tier_id = itemTierId;
+                lastRow.is_new = false;
+                lastRow.new_item_name = '';
+                lastRow.category_id = item.category_id || '';
+                lastRow.is_new_category = false;
+                lastRow.new_category_name = '';
                 lastRow.search_text = itemLabel;
                 lastRow.unit_type = itemUnit;
                 lastRow.tare_mode = itemUnit;
-                lastRow.price_per_kg = parseFloat(item.buy_price_per_kg) || 0;
+                lastRow.price_per_kg = itemPrice;
             } else {
                 this.rows.push({
                     uid: Date.now() + Math.random(),
-                    scrap_item_id: item.id,
+                    scrap_item_id: item.scrap_item_id || item.id,
+                    tier_id: itemTierId,
+                    is_new: false,
+                    new_item_name: '',
+                    category_id: item.category_id || '',
+                    is_new_category: false,
+                    new_category_name: '',
                     search_text: itemLabel,
                     dropdown_open: false,
                     unit_type: itemUnit,
@@ -1136,14 +1471,10 @@ function cashierPos() {
                     tare_weight: '',
                     tare_percent: '',
                     tare_mode: itemUnit,
-                    price_per_kg: parseFloat(item.buy_price_per_kg) || 0
+                    price_per_kg: itemPrice
                 });
             }
-            this.$nextTick(() => {
-                if (window.lucide && typeof window.lucide.createIcons === 'function') {
-                    window.lucide.createIcons();
-                }
-            });
+            this.refreshIcons();
         },
 
         onItemChanged(index) {
@@ -1168,13 +1499,14 @@ function cashierPos() {
         removeRow(index) {
             if (this.rows.length > 1) {
                 this.rows.splice(index, 1);
+                this.refreshIcons();
             }
         },
 
         onSupplierInput() {
             const rawVal = (this.supplierName || '').trim();
             const inputVal = rawVal.toLowerCase();
-            if (inputVal === '' || inputVal === 'umum' || inputVal === 'umum / tunai') {
+            if (inputVal === '') {
                 this.selectedSupplierId = '';
                 this.supplierDebt = 0;
                 this.debtDeductionAmount = 0;
@@ -1348,20 +1680,111 @@ function cashierPos() {
         },
 
         getMasterPrice(row) {
-            if (!row || !row.scrap_item_id) return 0;
-            const found = this.masterItems.find(i => i.id == row.scrap_item_id);
-            return found ? parseFloat(found.buy_price_per_kg) || 0 : 0;
+            if (!row || !row.scrap_item_id || row.scrap_item_id === '__new__' || row.is_new) return 0;
+            const matches = this.masterItems.filter(i => (i.scrap_item_id == row.scrap_item_id || i.id == row.scrap_item_id));
+            if (!matches.length) return 0;
+            return Math.max(...matches.map(i => parseFloat(i.master_buy_price || i.buy_price_per_kg || 0)));
         },
 
         validatePrice(row) {
+            if (this.isOwner) return;
+            if (row.is_new || row.scrap_item_id === '__new__') return;
             const max = this.getMasterPrice(row);
             if (max > 0 && parseFloat(row.price_per_kg) > max) {
-                alert('Harga beli tidak boleh melebihi harga master (' + this.formatRp(max) + ')! Harga otomatis disesuaikan ke batas maksimum.');
+                const roleName = this.userRole === 'admin' ? 'Admin' : 'Kasir';
+                alert(roleName + ' tidak boleh memasukkan harga beli melebihi harga master (' + this.formatRp(max) + ')! Harga otomatis disesuaikan ke batas maksimum. Hanya Owner yang dapat memasukkan harga di atas harga master.');
                 row.price_per_kg = max;
             }
         },
 
+        getRowBaseName(row) {
+            if (row.is_new) return row.new_item_name || row.search_text || 'Barang Baru';
+            const found = this.masterItems.find(i => (i.scrap_item_id == row.scrap_item_id || i.id == row.scrap_item_id));
+            return found ? (found.base_name || found.name) : (row.search_text ? row.search_text.split(' (')[0] : '');
+        },
+
+        getItemRows(row) {
+            const id = row.is_new ? ('new_' + (row.new_item_name || row.search_text)) : row.scrap_item_id;
+            if (!id || id === '__new__') return [row];
+            return this.rows.filter(r => {
+                const rId = r.is_new ? ('new_' + (r.new_item_name || r.search_text)) : r.scrap_item_id;
+                return rId === id;
+            });
+        },
+
+        hasMultiplePrices(row) {
+            const matching = this.getItemRows(row);
+            return matching.length > 1;
+        },
+
+        getItemAccumulatedWeight(row) {
+            const matching = this.getItemRows(row);
+            return matching.reduce((acc, r) => acc + this.rowNetWeight(r), 0);
+        },
+
+        getItemAccumulatedSubtotal(row) {
+            const matching = this.getItemRows(row);
+            return matching.reduce((acc, r) => acc + this.rowSubtotal(r), 0);
+        },
+
+        multiPriceCommodities() {
+            const map = {};
+            for (const r of this.rows) {
+                const name = this.getRowBaseName(r);
+                if (!name) continue;
+                if (!map[name]) {
+                    map[name] = { name: name, rows: [], unit: r.unit_type || 'kg' };
+                }
+                map[name].rows.push(r);
+            }
+            const res = [];
+            for (const k in map) {
+                if (map[k].rows.length > 1) {
+                    const totalWeight = map[k].rows.reduce((acc, r) => acc + this.rowNetWeight(r), 0);
+                    const totalSubtotal = map[k].rows.reduce((acc, r) => acc + this.rowSubtotal(r), 0);
+                    res.push({
+                        name: map[k].name,
+                        totalWeight: totalWeight,
+                        totalSubtotal: totalSubtotal,
+                        unit: map[k].unit
+                    });
+                }
+            }
+            return res;
+        },
+
+        consolidateRowsByPrice() {
+            const map = {};
+            const consolidated = [];
+            for (const row of this.rows) {
+                const id = row.is_new ? ('new_' + (row.new_item_name || row.search_text)) : (row.scrap_item_id || 'empty');
+                const price = parseFloat(row.price_per_kg) || 0;
+                const unit = row.unit_type || 'kg';
+                const typeName = (row.item_type_name || '').trim();
+                const key = id + '_' + price + '_' + unit + '_' + typeName;
+
+                if (id !== 'empty' && map[key] !== undefined) {
+                    // Harga sama: otomatis akumulasi berat / kuantitas ke baris tersebut
+                    const existing = consolidated[map[key]];
+                    if (this.isPcsUnit(row)) {
+                        existing.quantity = (parseFloat(existing.quantity) || 1) + (parseFloat(row.quantity) || 1);
+                    } else {
+                        existing.gross_weight = (parseFloat(existing.gross_weight) || 0) + (parseFloat(row.gross_weight) || 0);
+                        existing.tare_weight = (parseFloat(existing.tare_weight) || 0) + (parseFloat(row.tare_weight) || 0);
+                    }
+                } else {
+                    map[key] = consolidated.length;
+                    consolidated.push(row);
+                }
+            }
+            if (consolidated.length < this.rows.length) {
+                this.rows = consolidated;
+            }
+        },
+
         handleSubmit(e) {
+            this.consolidateRowsByPrice();
+
             if (this.subtotalAmount() <= 0) {
                 e.preventDefault();
                 alert('Silakan masukkan timbangan atau jumlah barang yang valid (subtotal > Rp 0).');
@@ -1371,11 +1794,36 @@ function cashierPos() {
 
             for (let i = 0; i < this.rows.length; i++) {
                 const row = this.rows[i];
-                if (!row.scrap_item_id) {
-                    e.preventDefault();
-                    alert('Silakan pilih barang rongsok untuk baris ke-' + (i + 1) + '.');
-                    this.isSubmitting = false;
-                    return;
+
+                // Auto-detect typed new item if not in master list
+                if (!row.scrap_item_id && !row.is_new) {
+                    const query = (row.search_text || '').trim();
+                    if (query) {
+                        const match = this.masterItems.find(item => item.name.toLowerCase() === query.toLowerCase());
+                        if (match) {
+                            row.scrap_item_id = match.id;
+                            row.price_per_kg = row.price_per_kg || parseFloat(match.buy_price_per_kg) || 0;
+                        } else {
+                            row.is_new = true;
+                            row.scrap_item_id = '__new__';
+                            row.new_item_name = query;
+                        }
+                    } else {
+                        e.preventDefault();
+                        alert('Silakan pilih material scrap atau ketik nama barang baru untuk baris ke-' + (i + 1) + '.');
+                        this.isSubmitting = false;
+                        return;
+                    }
+                } else if (row.is_new) {
+                    const name = (row.new_item_name || row.search_text || '').trim();
+                    if (!name) {
+                        e.preventDefault();
+                        alert('Silakan ketik nama barang baru untuk baris ke-' + (i + 1) + '.');
+                        this.isSubmitting = false;
+                        return;
+                    }
+                    row.new_item_name = name;
+                    row.scrap_item_id = '__new__';
                 }
 
                 if (this.isPcsUnit(row)) {
@@ -1396,16 +1844,26 @@ function cashierPos() {
                     }
                 }
 
-                const max = this.getMasterPrice(row);
                 const currentPrice = parseFloat(row.price_per_kg) || 0;
-                if (max > 0 && currentPrice > max) {
+                if (currentPrice <= 0) {
                     e.preventDefault();
-                    const found = this.masterItems.find(it => it.id == row.scrap_item_id);
-                    const itemName = found ? found.name : 'Baris ' + (i + 1);
-                    alert('Harga beli untuk "' + itemName + '" (Rp ' + currentPrice.toLocaleString('id-ID') + ') tidak boleh melebihi harga master (' + this.formatRp(max) + ').\nSilakan input harga sama atau di bawahnya.');
-                    row.price_per_kg = max;
+                    alert('Harga beli per satuan pada baris ke-' + (i + 1) + ' harus lebih dari Rp 0.');
                     this.isSubmitting = false;
                     return;
+                }
+
+                if (!this.isOwner && !row.is_new && row.scrap_item_id !== '__new__') {
+                    const max = this.getMasterPrice(row);
+                    if (max > 0 && currentPrice > max) {
+                        e.preventDefault();
+                        const found = this.masterItems.find(it => (it.scrap_item_id == row.scrap_item_id || it.id == row.scrap_item_id));
+                        const itemName = found ? (found.base_name || found.name) : 'Baris ' + (i + 1);
+                        const roleName = this.userRole === 'admin' ? 'Admin' : 'Kasir';
+                        alert(roleName + ' tidak diizinkan memasukkan harga beli untuk "' + itemName + '" (Rp ' + currentPrice.toLocaleString('id-ID') + ') melebihi harga master (' + this.formatRp(max) + ').\nSilakan input harga sama atau di bawahnya. Hanya Owner yang dapat memasukkan harga di atas harga master.');
+                        row.price_per_kg = max;
+                        this.isSubmitting = false;
+                        return;
+                    }
                 }
             }
 
@@ -1415,11 +1873,11 @@ function cashierPos() {
         resetForm() {
             if (confirm('Yakin ingin mengosongkan seluruh tabel timbangan kasir?')) {
                 this.rows = [
-                    { uid: Date.now(), scrap_item_id: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', tare_percent: '', tare_mode: 'kg', price_per_kg: 0 }
+                    { uid: Date.now(), scrap_item_id: '', is_new: false, new_item_name: '', category_id: '', is_new_category: false, new_category_name: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', tare_percent: '', tare_mode: 'kg', price_per_kg: 0 }
                 ];
                 this.selectedSupplierId = '';
-                this.supplierName = 'Umum / Tunai';
-                this.supplierSearchQuery = 'Umum / Tunai';
+                this.supplierName = '';
+                this.supplierSearchQuery = '';
                 this.supplierDropdownOpen = false;
                 this.paymentMethodId = this.paymentMethodsList[0]?.id || 1;
                 this.paymentMethodSearchQuery = this.paymentMethodsList[0]?.name || 'Tunai';
@@ -1432,6 +1890,7 @@ function cashierPos() {
                 this.roundingAmount = 0;
                 this.customAccountName = '';
                 this.customAccountNo = '';
+                this.refreshIcons();
             }
         },
 
@@ -1444,7 +1903,7 @@ function cashierPos() {
             if (Math.floor(num) === num) {
                 return num.toLocaleString('id-ID');
             }
-            return num.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+            return num.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
         },
 
         formatInteger(val) {

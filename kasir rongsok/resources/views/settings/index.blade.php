@@ -73,6 +73,41 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Signature Section (Tanda Tangan Owner untuk Dokumen PDF) -->
+                <div class="border-t border-slate-200 pt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Tanda Tangan Owner</label>
+                        <p class="text-[11px] text-slate-500 mb-2">Disisipkan otomatis di semua berkas PDF pada kolom tanda tangan Owner / Pimpinan. Format: PNG transparan, JPG, WebP (Maks. 2MB).</p>
+                        
+                        @if(\App\Models\BusinessSetting::hasOwnerSignature())
+                            <div class="p-3 bg-white rounded-xl border border-emerald-300 inline-block shadow-sm">
+                                <img src="{{ \App\Models\BusinessSetting::ownerSignatureUrl() }}" alt="Tanda Tangan Owner" style="height: 60px; max-height: 65px; width: auto; max-width: 180px; object-fit: contain;">
+                            </div>
+                            <div class="mt-2 flex items-center gap-1.5 text-xs text-emerald-700 font-semibold">
+                                <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                <span>Tanda tangan aktif tersimpan</span>
+                            </div>
+                        @else
+                            <div class="w-24 h-16 rounded-xl bg-slate-100 flex flex-col items-center justify-center text-slate-400 border border-dashed border-slate-300">
+                                <i data-lucide="pen-tool" class="w-5 h-5 text-slate-400 mb-0.5"></i>
+                                <span class="text-[9px] font-semibold text-slate-400">Belum Ada TTD</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block mt-1">Kolom tanda tangan akan kosong untuk TTD basah manual</span>
+                        @endif
+                    </div>
+
+                    <div class="sm:col-span-2 space-y-2">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Unggah / Ganti File Tanda Tangan Owner</label>
+                            <input type="file" name="owner_signature" accept="image/png,image/jpeg,image/webp"
+                                   class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-300 rounded-lg p-1 bg-white">
+                            <p class="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
+                                💡 <strong>Tips:</strong> Disarankan menggunakan gambar tanda tangan dengan latar belakang transparan (format <code>.png</code>) agar menyatu dengan rapi di atas dokumen PDF dan cap stempel.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- BAGIAN 2: PROFIL USAHA & DEPO (UNTUK KOP NOTA & SURAT JALAN) -->
@@ -86,26 +121,36 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Nama Badan Usaha / Depo Rongsok *</label>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Nama Badan Usaha / Depo *</label>
                         <input type="text" name="company_name" value="{{ old('company_name', $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur') }}" required
                                class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-bold text-slate-900">
                         <span class="text-[10px] text-slate-400">Nama resmi yang dicetak di baris pertama nota transaksi & surat jalan.</span>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Slogan / Tagline Usaha</label>
-                        <input type="text" name="company_tagline" value="{{ old('company_tagline', $settings['company_tagline'] ?? 'Pusat Pembelian & Pengelolaan Daur Ulang Terpercaya') }}"
-                               class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 text-slate-700">
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Istilah Komoditas / Teks "Barang Rongsok"</label>
+                        <input type="text" name="commodity_term" value="{{ old('commodity_term', $settings['commodity_term'] ?? 'Barang Rongsok') }}"
+                               placeholder="Contoh: Barang Rongsok, Material Scrap, Barang Bekas, Logam & Besi Tua"
+                               class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-bold text-slate-900">
+                        <span class="text-[10px] text-slate-400">Dapat diganti sesuai jenis usaha (misal: Barang Rongsok, Material Scrap, Barang Bekas). Digunakan di Surat Perjanjian, Nota, & Dokumen PDF.</span>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Slogan / Tagline Usaha</label>
+                        <input type="text" name="company_tagline" value="{{ old('company_tagline', $settings['company_tagline'] ?? 'Pusat Pembelian & Pengelolaan Daur Ulang Terpercaya') }}"
+                               class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 text-slate-700">
+                    </div>
+
+                    <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Nomor Telepon / WhatsApp *</label>
                         <input type="text" name="company_phone" value="{{ old('company_phone', $settings['company_phone'] ?? '0812-3456-7890') }}" required
                                class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono">
                     </div>
+                </div>
 
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Format Printer Nota Default *</label>
                         <select name="default_printer_type" required class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-medium">
@@ -177,7 +222,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Teks Layanan Jemput Barang (Untuk WA & PDF) *</label>
-                        <textarea name="pickup_service_text" rows="3" class="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:ring-indigo-500 bg-white">{{ old('pickup_service_text', $settings['pickup_service_text'] ?? 'Melayani armada jemput barang rongsok skala besar langsung ke lokasi gudang/pabrik Anda. Hubungi kantor kami.') }}</textarea>
+                        <textarea name="pickup_service_text" rows="3" class="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:ring-indigo-500 bg-white">{{ old('pickup_service_text', $settings['pickup_service_text'] ?? 'Melayani armada jemput material scrap & daur ulang skala besar langsung ke lokasi gudang/pabrik Anda. Hubungi kantor kami.') }}</textarea>
                         <span class="text-[10px] text-slate-500">Tampil otomatis saat broadcast daftar harga ke WA atau pada dokumen resmi.</span>
                     </div>
 
@@ -189,13 +234,13 @@
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Catatan Dokumen Surat Jalan Pengiriman</label>
-                        <textarea name="delivery_order_notes" rows="3" class="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:ring-indigo-500 bg-white">{{ old('delivery_order_notes', $settings['delivery_order_notes'] ?? 'Surat Jalan ini merupakan dokumen bukti penyerahan barang rongsok yang sah. Mohon diperiksa kembali sebelum ditandatangani.') }}</textarea>
+                        <textarea name="delivery_order_notes" rows="3" class="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:ring-indigo-500 bg-white">{{ old('delivery_order_notes', $settings['delivery_order_notes'] ?? 'Surat jalan ini dibuat 2 (dua) rangkap: Lembar 1 dipegang oleh gudang dan Lembar 2 dipegang oleh supir. Dokumen sah penyerahan material scrap & daur ulang.') }}</textarea>
                         <span class="text-[10px] text-slate-500">Dicetak di bagian bawah lembar Surat Jalan pengiriman pabrik.</span>
                     </div>
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Ketentuan Perjanjian Hutang Modal (Debt Agreement Terms)</label>
-                        <textarea name="debt_agreement_terms" rows="3" class="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:ring-indigo-500 bg-white">{{ old('debt_agreement_terms', $settings['debt_agreement_terms'] ?? 'Apabila PIHAK KEDUA tidak menyetorkan barang rongsok atau tidak mengangsur pinjaman sesuai kesepakatan, PIHAK PERTAMA berhak menagih sisa kewajiban atau mengambil tindakan penyelesaian sesuai hukum yang berlaku di Republik Indonesia.') }}</textarea>
+                        <textarea name="debt_agreement_terms" rows="3" class="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:ring-indigo-500 bg-white">{{ old('debt_agreement_terms', $settings['debt_agreement_terms'] ?? 'Apabila PIHAK KEDUA tidak menyetorkan material scrap & daur ulang atau tidak mengangsur pinjaman sesuai kesepakatan, PIHAK PERTAMA berhak menagih sisa kewajiban atau mengambil tindakan penyelesaian sesuai hukum yang berlaku di Republik Indonesia.') }}</textarea>
                         <span class="text-[10px] text-slate-500">Dicetak sebagai pasal penyelesaian pada Surat Perjanjian Hutang Modal.</span>
                     </div>
                 </div>

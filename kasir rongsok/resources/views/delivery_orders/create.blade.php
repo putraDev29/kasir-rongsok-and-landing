@@ -11,9 +11,15 @@
             </a>
             <div>
                 <h2 class="text-xl font-bold text-slate-900">Form Surat Jalan Pengiriman Rongsok</h2>
-                <p class="text-xs text-slate-500">Format cetak/ekspor PDF resmi ukuran HVS Landscape ÷ 2.</p>
+                <p class="text-xs text-slate-500">Dibuat otomatis 2 rangkap (Lembar 1: Gudang & Lembar 2: Supir) ukuran HVS Landscape ÷ 2.</p>
             </div>
         </div>
+    </div>
+
+    <!-- 2 Rangkap Notice -->
+    <div class="p-3 bg-blue-50/90 rounded-xl border border-blue-200 text-xs flex items-center gap-2.5 text-blue-950">
+        <i data-lucide="info" class="w-4 h-4 text-blue-600 shrink-0"></i>
+        <span><strong>Ketentuan Dokumen:</strong> Surat jalan ini otomatis diterbitkan <strong>2 (dua) rangkap</strong>: <strong>Lembar 1</strong> dipegang oleh Gudang (arsip depo) dan <strong>Lembar 2</strong> dipegang oleh Supir (dibawa armada ke lokasi tujuan).</span>
     </div>
 
     @if($recentSales->count() > 0 && !$salesTx)
@@ -75,7 +81,26 @@
 
                 <!-- Vehicle Info -->
                 <div class="space-y-3 p-4 bg-slate-50 rounded-xl border border-slate-200/80">
-                    <span class="text-xs font-bold text-slate-700 uppercase">Armada Kendaraan & Pengemudi</span>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-700 uppercase">Armada Kendaraan & Pengemudi</span>
+                        <span class="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Bisa Simpan Rekening</span>
+                    </div>
+
+                    <!-- Pilih dari Master Sopir -->
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Pilih Dari Master Sopir (Opsional)</label>
+                        <select name="driver_id" x-model="driverId" @change="onDriverSelect($event)"
+                                class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-emerald-500 bg-white">
+                            <option value="">-- Ketik Sopir Baru / Atau Pilih dari Master --</option>
+                            @foreach($drivers ?? [] as $drv)
+                                <option value="{{ $drv->id }}" data-name="{{ $drv->name }}" data-phone="{{ $drv->phone }}"
+                                        data-vehicle-number="{{ $drv->vehicle_number }}" data-vehicle-type="{{ $drv->vehicle_type }}"
+                                        data-bank-name="{{ $drv->bank_name }}" data-bank-number="{{ $drv->bank_account_number }}" data-bank-holder="{{ $drv->bank_account_name }}">
+                                    {{ $drv->name }} [{{ $drv->code }}] {{ $drv->vehicle_number ? ' - Plat: ' . $drv->vehicle_number : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
                     <div class="grid grid-cols-2 gap-2">
                         <div>
@@ -109,6 +134,40 @@
                         </div>
                     </div>
 
+                    <!-- Informasi Rekening Bank Sopir (Pencairan Ongkos Armada) -->
+                    <div class="p-3 bg-blue-50/70 border border-blue-200 rounded-xl space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="block text-[11px] font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1">
+                                <i data-lucide="credit-card" class="w-3.5 h-3.5 text-blue-600"></i>
+                                <span>Informasi Rekening Bank Sopir (Pencairan Ongkos Armada)</span>
+                            </span>
+                            <span class="text-[9.5px] text-blue-700 font-medium">Opsional</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nama Bank</label>
+                                <input type="text" name="driver_bank_name" x-model="driverBankName" placeholder="BCA / BRI / Mandiri"
+                                       class="w-full text-xs p-1.5 rounded-lg border border-slate-300 focus:ring-emerald-500 bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nomor Rekening</label>
+                                <input type="text" name="driver_bank_account_number" x-model="driverBankAccountNumber" placeholder="No. Rekening"
+                                       class="w-full text-xs p-1.5 rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nama Pemilik (A/N)</label>
+                                <input type="text" name="driver_bank_account_name" x-model="driverBankAccountName" placeholder="Atas Nama Pemilik"
+                                       class="w-full text-xs p-1.5 rounded-lg border border-slate-300 focus:ring-emerald-500 bg-white">
+                            </div>
+                        </div>
+                        <div class="pt-1 flex items-center">
+                            <label class="inline-flex items-center gap-1.5 text-blue-900 text-[10.5px] font-medium cursor-pointer">
+                                <input type="checkbox" name="save_to_driver_bank" value="1" checked class="rounded border-blue-300 text-blue-600 focus:ring-blue-500">
+                                <span>Simpan / perbarui nomor rekening ke data master sopir/driver</span>
+                            </label>
+                        </div>
+                    </div>
+
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-600 mb-1">Tanggal Keberangkatan <span class="text-red-500">*</span></label>
                         <input type="date" name="delivery_date" value="{{ date('Y-m-d') }}" required
@@ -116,6 +175,31 @@
                     </div>
                 </div>
 
+            </div>
+
+            <!-- Biaya Operasional Pengiriman (Task 10) -->
+            <div class="pt-3 border-t border-slate-100 bg-blue-50/50 p-4 rounded-xl border border-blue-200/80 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-blue-900 uppercase flex items-center gap-1.5">
+                        <i data-lucide="banknote" class="w-4 h-4 text-blue-600"></i>
+                        <span>Biaya Operasional Pengiriman (Masuk Operasional & Tampil di PDF Owner)</span>
+                    </span>
+                    <span class="text-[10px] text-blue-700 font-semibold bg-blue-100 px-2 py-0.5 rounded">Opsional</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1">Biaya Ongkos Armada / Supir (Rp)</label>
+                        <input type="number" name="shipping_cost" min="0" step="1000" placeholder="0"
+                               class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-blue-500 font-mono font-bold text-slate-800 bg-white">
+                        <span class="text-[10px] text-slate-400">Dicatat ke pengeluaran 'Biaya Transportasi & Armada' & Lembar 1 PDF Owner.</span>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1">Biaya Bongkar Muat / Tenaga Angkut (Rp)</label>
+                        <input type="number" name="loading_cost" min="0" step="1000" placeholder="0"
+                               class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-blue-500 font-mono font-bold text-slate-800 bg-white">
+                        <span class="text-[10px] text-slate-400">Dicatat ke pengeluaran 'Biaya Bongkar Muat' & Lembar 1 PDF Owner.</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -129,9 +213,9 @@
                     </span>
                     <div>
                         <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                            2. Rincian Muatan Barang Rongsok
+                            2. Rincian Muatan Material Scrap & Daur Ulang
                         </h3>
-                        <p class="text-[10px] text-slate-500">Daftar muatan barang rongsok yang dimuat ke armada ekspedisi</p>
+                        <p class="text-[10px] text-slate-500">Daftar muatan material scrap & daur ulang yang dimuat ke armada ekspedisi</p>
                     </div>
                 </div>
 
@@ -157,6 +241,8 @@
                             <!-- Pilih Dari Master (Searchable Combobox) -->
                             <div class="w-48 sm:w-60 shrink-0 relative" @click.outside="row.dropdown_open = false">
                                 <input type="hidden" :name="'items['+idx+'][scrap_item_id]'" :value="row.scrap_item_id">
+                                <input type="hidden" :name="'items['+idx+'][price_per_kg]'" :value="row.price_per_kg || 0">
+                                <input type="hidden" :name="'items['+idx+'][subtotal]'" :value="(row.price_per_kg && row.weight) ? (row.price_per_kg * row.weight) : 0">
 
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
@@ -197,14 +283,17 @@
                                      class="absolute z-50 left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-white rounded-xl border border-slate-200 shadow-xl divide-y divide-slate-100"
                                      style="display: none;">
                                     
-                                    <template x-for="item in filteredMasterItems(row.search_text)" :key="item.id">
+                                    <template x-for="item in filteredMasterItems(row.search_text)" :key="item.tier_id || (item.id + '_' + item.price_per_kg)">
                                         <button type="button" 
                                                 @click="selectRowItem(row, item)"
                                                 class="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 flex items-center justify-between transition-colors"
-                                                :class="{ 'bg-emerald-50/70': row.scrap_item_id == item.id }">
+                                                :class="{ 'bg-emerald-50/70': row.tier_id ? (row.tier_id === item.tier_id) : (row.scrap_item_id == item.id) }">
                                             <div class="min-w-0 pr-2">
                                                 <div class="text-xs font-bold text-slate-900 truncate" x-text="item.name"></div>
-                                                <div class="text-[10px] text-slate-500 font-mono" x-text="item.code"></div>
+                                                <div class="text-[10px] text-slate-500 font-mono">
+                                                    <span x-text="item.code"></span>
+                                                    <span x-show="item.current_stock > 0" class="text-emerald-700 font-semibold" x-text="' • Stok: ' + item.current_stock + ' ' + (item.unit_type || 'kg')"></span>
+                                                </div>
                                             </div>
                                             <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1 rounded uppercase" x-text="item.unit_type || 'kg'"></span>
                                         </button>
@@ -269,7 +358,7 @@
                                        :name="'items['+idx+'][weight]'" 
                                        x-model.number="row.weight" 
                                        required 
-                                       placeholder="0.00"
+                                       placeholder="0"
                                        class="w-full py-1.5 px-2 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono font-bold text-slate-900 bg-white">
                             </div>
 
@@ -347,10 +436,34 @@ function deliveryOrderForm() {
         salesTx: @json($salesTx),
         recipientName: '{{ $salesTx ? $salesTx->buyer_name : '' }}',
         recipientPhone: '{{ $salesTx ? $salesTx->buyer_phone : '' }}',
+        driverId: '',
         vehicleNumber: '',
         driverName: '',
         driverPhone: '',
         vehicleType: 'Truk Colt Diesel',
+        driverBankName: '',
+        driverBankAccountNumber: '',
+        driverBankAccountName: '',
+        saveToDriverBank: true,
+
+        onDriverSelect(e) {
+            const opt = e.target.selectedOptions[0];
+            if (opt && opt.value) {
+                this.driverName = opt.dataset.name || '';
+                this.driverPhone = opt.dataset.phone || '';
+                if (opt.dataset.vehicleNumber) this.vehicleNumber = opt.dataset.vehicleNumber;
+                if (opt.dataset.vehicleType) this.vehicleType = opt.dataset.vehicleType;
+                this.driverBankName = opt.dataset.bankName || '';
+                this.driverBankAccountNumber = opt.dataset.bankNumber || '';
+                this.driverBankAccountName = opt.dataset.bankHolder || '';
+            } else {
+                this.driverId = '';
+                this.driverBankName = '';
+                this.driverBankAccountNumber = '';
+                this.driverBankAccountName = '';
+            }
+        },
+
         rows: [
             @if($salesTx && $salesTx->items->count() > 0)
                 @foreach($salesTx->items as $si)
@@ -363,12 +476,14 @@ function deliveryOrderForm() {
                         item_type_name: '{{ addslashes($si->item_type_name ?? "") }}',
                         unit_type: '{{ $si->unit_type ?? "kg" }}',
                         weight: {{ (float) ($si->weight ?? $si->quantity ?? 0) }},
+                        price_per_kg: {{ (float) ($si->sell_price_per_kg ?? 0) }},
+                        subtotal: {{ (float) ($si->subtotal ?? 0) }},
                         package_qty: 0,
                         notes: ''
                     },
                 @endforeach
             @else
-                { uid: 1, scrap_item_id: '', search_text: '', dropdown_open: false, item_name: '', item_type_name: '', unit_type: 'kg', weight: '', package_qty: '', notes: '' }
+                { uid: 1, scrap_item_id: '', search_text: '', dropdown_open: false, item_name: '', item_type_name: '', unit_type: 'kg', weight: '', price_per_kg: 0, subtotal: 0, package_qty: '', notes: '' }
             @endif
         ],
 
@@ -380,23 +495,28 @@ function deliveryOrderForm() {
             return this.masterItems.filter(item => {
                 const nameMatch = (item.name || '').toLowerCase().includes(q);
                 const codeMatch = (item.code || '').toLowerCase().includes(q);
-                return nameMatch || codeMatch;
+                const baseMatch = (item.base_name || '').toLowerCase().includes(q);
+                const priceMatch = String(item.price_per_kg || '').includes(q);
+                return nameMatch || codeMatch || baseMatch || priceMatch;
             });
         },
 
         selectRowItem(row, item) {
             row.scrap_item_id = item.id;
+            row.tier_id = item.tier_id || (item.id + '_' + item.price_per_kg);
             row.search_text = item.name + (item.code ? ' (' + item.code + ')' : '');
             row.item_name = item.name;
             if (item.unit_type) {
                 row.unit_type = item.unit_type;
             }
+            row.price_per_kg = parseFloat(item.price_per_kg) || parseFloat(item.sell_price_per_kg) || 0;
             row.dropdown_open = false;
         },
 
         clearRowItem(row) {
             row.scrap_item_id = '';
             row.search_text = '';
+            row.price_per_kg = 0;
             row.dropdown_open = true;
         },
 
@@ -410,6 +530,8 @@ function deliveryOrderForm() {
                 item_type_name: '',
                 unit_type: 'kg',
                 weight: '',
+                price_per_kg: 0,
+                subtotal: 0,
                 package_qty: '',
                 notes: ''
             });

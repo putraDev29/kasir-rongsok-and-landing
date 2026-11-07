@@ -1,4 +1,4 @@
-@extends('layouts.app', ['header' => 'Master Data Jenis Barang Rongsok'])
+@extends('layouts.app', ['header' => 'Master Data Material Scrap & Daur Ulang'])
 
 @section('content')
 <div class="space-y-4" x-data="{ quickPriceModal: false, activeItem: {} }">
@@ -6,17 +6,17 @@
     <!-- Header Actions -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div>
-            <h2 class="text-base font-bold text-slate-900">Daftar Jenis Barang & Standar Harga</h2>
-            <p class="text-xs text-slate-500">Kelola harga beli & jual rongsok per kilogram</p>
+            <h2 class="text-base font-bold text-slate-900">Daftar Jenis Barang &amp; Standar Harga</h2>
+            <p class="text-xs text-slate-500">Kelola harga beli &amp; jual {{ strtolower(\App\Models\BusinessSetting::commodityTerm()) }} per kilogram</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
             <button type="button" 
                     @click="openWaPdfModal({
-                        title: 'Kirim Daftar Harga Beli Rongsok PDF',
-                        subtitle: 'Kirim berkas dokumen PDF daftar harga beli rongsok ke nomor WhatsApp',
-                        filename: 'Daftar_Harga_Beli_Rongsok_' + ('{{ date("Ymd") }}') + '.pdf',
-                        fileDescription: 'Dokumen PDF Resmi Daftar Standar Harga Beli Rongsok Depo',
+                        title: 'Kirim Daftar Harga Beli {{ \App\Models\BusinessSetting::commodityTerm() }} PDF',
+                        subtitle: 'Kirim berkas dokumen PDF daftar harga beli {{ strtolower(\App\Models\BusinessSetting::commodityTerm()) }} ke nomor WhatsApp',
+                        filename: 'Daftar_Harga_Beli_' + ('{{ date("Ymd") }}') + '.pdf',
+                        fileDescription: 'Dokumen PDF Resmi Daftar Standar Harga Beli {{ \App\Models\BusinessSetting::commodityTerm() }} Depo',
                         pdfUrl: '{{ route('scrap-items.pdf-price-list') }}',
                         previewUrl: '{{ route('scrap-items.preview-wa') }}',
                         sendUrl: '{{ route('scrap-items.send-wa') }}',
@@ -34,10 +34,19 @@
                 <span>Export Excel</span>
             </a>
 
+            <button type="button"
+               @click="openPdfPreview('{{ route('scrap-items.pdf-price-list') }}', 'Daftar Standar Harga Beli Depo', 'Daftar_Harga_Beli_' + ('{{ date('Ymd') }}') + '.pdf', 'Standar Harga Beli Komoditas Rongsok & Scrap')"
+               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 shadow-xs transition-colors cursor-pointer"
+               title="Preview & Unduh Berkas PDF Daftar Standar Harga Beli">
+                <i data-lucide="file-text" class="w-4 h-4 text-rose-600"></i>
+                <span>Preview PDF Harga</span>
+            </button>
+
             <a href="{{ route('scrap-items.print-price-list') }}" target="_blank"
-               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs border border-slate-300 shadow-sm">
+               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs border border-slate-300 shadow-sm"
+               title="Cetak / Layout Kertas Daftar Standar Harga Beli">
                 <i data-lucide="printer" class="w-4 h-4 text-slate-600"></i>
-                <span>Cetak PDF</span>
+                <span>Format Cetak</span>
             </a>
 
             <a href="{{ route('scrap-items.create') }}" 
@@ -165,7 +174,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="py-8 text-center text-slate-400">Belum ada barang rongsok yang terdaftar.</td>
+                            <td colspan="9" class="py-8 text-center text-slate-400">Belum ada material scrap & daur ulang yang terdaftar.</td>
                         </tr>
                     @endforelse
                 </tbody>

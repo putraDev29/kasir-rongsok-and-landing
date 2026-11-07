@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DebtController;
 use App\Http\Controllers\DeliveryOrderController;
+use App\Http\Controllers\DriverController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\LandingPageAdminController;
 use App\Http\Controllers\PurchaseTransactionController;
@@ -127,6 +128,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/purchases/{purchase}/cancel', [PurchaseTransactionController::class, 'cancel'])
         ->name('purchases.cancel')
         ->middleware('role:super_admin');
+    Route::post('/purchases/{purchase}/items/{item}/cancel', [PurchaseTransactionController::class, 'cancelItem'])
+        ->name('purchases.items.cancel')
+        ->middleware('role:super_admin');
 
     // Scrap Items (Master Barang) & PDF Price List (Hanya Owner)
     Route::get('/scrap-items/print-price-list', [ScrapItemController::class, 'printPriceList'])
@@ -170,6 +174,11 @@ Route::middleware('auth')->group(function () {
         ->except(['create', 'show', 'edit'])
         ->middleware('role:super_admin');
 
+    // Drivers (Data Sopir & Rekening Bank Ongkos Armada) - Owner & Admin
+    Route::resource('drivers', DriverController::class)
+        ->except(['create', 'show', 'edit'])
+        ->middleware('role:super_admin,admin');
+
     // Hutang Piutang / Pinjaman Modal (Debts & Loans) - Hanya Owner
     Route::get('/debts/excel', [DebtController::class, 'exportExcel'])->name('debts.excel')->middleware('role:super_admin');
     Route::get('/debts/export-excel', [DebtController::class, 'exportExcel'])->name('debts.export-excel')->middleware('role:super_admin');
@@ -180,6 +189,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/debts/{debt}/agreement-pdf', [DebtController::class, 'agreementPdf'])->name('debts.agreement-pdf')->middleware('role:super_admin');
     Route::get('/debts/{debt}/agreement-wa-preview', [DebtController::class, 'previewAgreementWa'])->name('debts.agreement-wa-preview')->middleware('role:super_admin');
     Route::post('/debts/{debt}/agreement-wa', [DebtController::class, 'agreementWa'])->name('debts.agreement-wa')->middleware('role:super_admin');
+    Route::get('/debts/{debt}/pdf', [DebtController::class, 'pdf'])->name('debts.pdf')->middleware('role:super_admin');
+    Route::get('/debts/{debt}/wa-preview', [DebtController::class, 'previewWa'])->name('debts.wa-preview')->middleware('role:super_admin');
+    Route::post('/debts/{debt}/send-wa', [DebtController::class, 'sendWa'])->name('debts.send-wa')->middleware('role:super_admin');
     Route::resource('debts', DebtController::class)
         ->only(['index', 'store', 'show'])
         ->middleware('role:super_admin');
@@ -229,10 +241,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/sales/{sale}/cancel', [SalesTransactionController::class, 'cancel'])
         ->name('sales.cancel')
         ->middleware('role:super_admin');
+    Route::post('/sales/{sale}/mark-delivered', [SalesTransactionController::class, 'markDelivered'])
+        ->name('sales.mark-delivered')
+        ->middleware('role:super_admin');
 
     // Surat Jalan / Delivery Orders (Pengiriman Armada Truk) - Hanya Owner
     Route::resource('delivery-orders', DeliveryOrderController::class)
         ->except(['edit', 'update'])
+        ->middleware('role:super_admin');
+    Route::post('/delivery-orders/{delivery_order}/mark-delivered', [DeliveryOrderController::class, 'markDelivered'])
+        ->name('delivery-orders.mark-delivered')
         ->middleware('role:super_admin');
     Route::get('/delivery-orders/{delivery_order}/print', [DeliveryOrderController::class, 'print'])
         ->name('delivery-orders.print')

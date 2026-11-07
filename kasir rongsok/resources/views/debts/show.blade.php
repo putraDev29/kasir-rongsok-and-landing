@@ -18,7 +18,7 @@
                     <h2 class="text-xl font-bold text-slate-900 font-mono">{{ $debt->debt_number }}</h2>
                     @if($debt->status === 'paid')
                         <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800">LUNAS</span>
-                    @elseif($debt->status === 'partially_paid')
+                    @elseif($debt->status === 'partial' || $debt->status === 'partially_paid')
                         <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">SEBAGIAN</span>
                     @else
                         <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800">BELUM LUNAS</span>
@@ -31,32 +31,36 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-            <a href="{{ route('debts.agreement', $debt) }}" target="_blank"
-               class="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors">
-                <i data-lucide="file-text" class="w-4 h-4 text-blue-600"></i>
+            <button type="button"
+               @click="openPdfPreview('{{ route('debts.agreement', $debt) }}', 'Surat Perjanjian {{ $debt->debt_number }}', 'Surat_Perjanjian_' + ('{{ preg_replace("/[^a-zA-Z0-9_\-]/", "_", trim($debt->borrower_name ?: "Peminjam")) }}') + '.pdf', 'Surat Perjanjian Format A4 (2 Rangkap: Owner & Peminjam)')"
+               class="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+               title="Preview Dokumen Surat Perjanjian Resmi (Format A4 - 2 Lembar Rangkap)">
+                <i data-lucide="scroll-text" class="w-4 h-4 text-blue-600"></i>
                 <span>Surat Perjanjian</span>
-            </a>
+            </button>
 
-            <a href="{{ route('debts.agreement-pdf', $debt) }}"
-               class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors">
-                <i data-lucide="download" class="w-4 h-4"></i>
-                <span>Unduh PDF</span>
-            </a>
+            <button type="button"
+               @click="openPdfPreview('{{ route('debts.pdf', $debt) }}', 'Riwayat Hutang #{{ $debt->debt_number }}', 'Riwayat_Hutang_' + ('{{ preg_replace("/[^a-zA-Z0-9_\-]/", "_", trim($debt->borrower_name ?: "Peminjam")) }}') + '.pdf', 'Peminjam: {{ $debt->borrower_name }} (Saldo: Rp {{ number_format($debt->remaining_amount, 0, ',', '.') }})')"
+               class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+               title="Preview & Unduh PDF Kartu Riwayat Hutang & Mutasi Angsuran Terkini">
+                <i data-lucide="file-text" class="w-4 h-4 text-rose-400"></i>
+                <span>Preview / Unduh PDF</span>
+            </button>
 
             <button type="button"
                     @click="openWaPdfModal({
-                        title: 'Kirim Surat Perjanjian Pinjaman PDF',
-                        subtitle: 'Kirim berkas dokumen PDF Surat Perjanjian Hutang Modal (SPH) ke WhatsApp peminjam',
+                        title: 'Kirim PDF Riwayat Hutang & Saldo Pinjaman',
+                        subtitle: 'Kirim berkas PDF ringkasan riwayat pinjaman dan mutasi cicilan sesuai status saat ini ke WhatsApp peminjam',
                         phone: '{{ $debt->borrower_phone }}',
-                        filename: 'SPH_' + ('{{ str_replace(['/', ' '], '_', $debt->agreement_number ?: $debt->debt_number) }}') + '.pdf',
-                        fileDescription: 'Dokumen PDF Resmi Surat Perjanjian Hutang Piutang Modal',
-                        pdfUrl: '{{ route('debts.agreement-pdf', $debt) }}',
-                        previewUrl: '{{ route('debts.agreement-wa-preview', $debt) }}',
-                        sendUrl: '{{ route('debts.agreement-wa', $debt) }}',
-                        submitButtonText: 'Kirim SPH PDF via WA'
+                        filename: 'Riwayat_Hutang_' + ('{{ preg_replace("/[^a-zA-Z0-9_\-]/", "_", trim($debt->borrower_name ?: "Peminjam")) }}') + '.pdf',
+                        fileDescription: 'Dokumen PDF Resmi Kartu Riwayat & Posisi Saldo Hutang Modal',
+                        pdfUrl: '{{ route('debts.pdf', $debt) }}',
+                        previewUrl: '{{ route('debts.wa-preview', $debt) }}',
+                        sendUrl: '{{ route('debts.send-wa', $debt) }}',
+                        submitButtonText: 'Kirim Riwayat PDF via WA'
                     })"
                     class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
-                    title="Kirim Surat Perjanjian PDF ke WhatsApp">
+                    title="Kirim Berkas PDF Riwayat Hutang ke WhatsApp">
                 <x-whatsapp-icon class="w-3.5 h-3.5" />
                 <span>Kirim WA (PDF)</span>
             </button>
@@ -117,6 +121,13 @@
                 </div>
 
                 <div>
+                    <span class="text-slate-400 block text-[11px]">Kategori Transaksi:</span>
+                    <span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold border {{ $debt->getCategoryBadgeClass() }}">
+                        {{ $debt->getCategoryLabel() }}
+                    </span>
+                </div>
+
+                <div>
                     <span class="text-slate-400 block text-[11px]">Tipe:</span>
                     <span class="font-semibold text-slate-700 capitalize">{{ $debt->borrower_type }}</span>
                     @if($debt->supplier)
@@ -130,6 +141,15 @@
                     <span class="text-slate-400 block text-[11px]">Nomor Telepon:</span>
                     <span class="font-mono text-slate-800">{{ $debt->borrower_phone ?? '-' }}</span>
                 </div>
+
+                @if($debt->supplier && $debt->supplier->hasBankDetails())
+                <div>
+                    <span class="text-slate-400 block text-[11px]">Rekening Bank Pemasok:</span>
+                    <span class="font-mono text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 inline-block font-semibold text-xs">
+                        {{ $debt->supplier->bankDisplay() }}
+                    </span>
+                </div>
+                @endif
 
                 <div>
                     <span class="text-slate-400 block text-[11px]">Jatuh Tempo:</span>

@@ -50,6 +50,20 @@
                         @if($t->buyer_phone)
                             <span style="color: #64748b; font-size: 8.5px;">({{ $t->buyer_phone }})</span>
                         @endif
+                        <div style="margin-top: 2px; font-size: 8px; color: #475569;">
+                            @foreach($t->grouped_master_items as $gm)
+                                <div>
+                                    • <strong>{{ $gm->item_name }}</strong>: {{ \App\Services\FormatHelper::weight($gm->total_weight) }} kg
+                                    @if($gm->has_variants)
+                                        <div style="padding-left: 6px; color: #1e40af;">
+                                            @foreach($gm->items as $vi)
+                                                ↳ Varian: {{ $vi->item_type_name ?: 'Standar' }} ({{ \App\Services\FormatHelper::weight($vi->weight) }} kg @ Rp {{ number_format($vi->sell_price_per_kg, 0, ',', '.') }})
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
                     </td>
                     <td class="text-right font-mono">{{ \App\Services\FormatHelper::weight($t->total_weight) }} kg</td>
                     <td class="text-right font-mono font-bold">{{ \App\Services\FormatHelper::rupiah($t->final_amount) }}</td>
@@ -78,8 +92,12 @@
     <div class="footer">
         <div class="signature-box">
             <p>Penanggung Jawab Penjualan,</p>
-            <div style="height: 45px;"></div>
-            <p><strong>( ____________________ )</strong></p>
+            <div style="height: 55px; text-align: center;">
+                @if(\App\Models\BusinessSetting::hasOwnerSignature())
+                    <img src="{{ \App\Models\BusinessSetting::ownerSignatureBase64() }}" alt="TTD Owner" style="height: 50px; max-height: 54px; width: auto; max-width: 150px; margin: 0 auto; display: block;">
+                @endif
+            </div>
+            <p><strong>( {{ \App\Models\User::where('role', 'super_admin')->first()?->name ?? 'Owner Depo' }} )</strong></p>
             <p style="color: #64748b;">Administrasi / Owner Depo</p>
         </div>
         <div style="clear: both;"></div>

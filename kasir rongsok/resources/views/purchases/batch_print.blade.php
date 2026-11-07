@@ -72,10 +72,14 @@
                     KERTAS HVS A4 (3 KOLOM)
                 </span>
             </div>
+            @php
+                $batchTotalNet = $purchases->sum(fn($p) => $p->items->where('is_cancelled', false)->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? $i->quantity : $i->net_weight));
+                $batchTotalAmount = $purchases->sum(fn($p) => max(0, $p->items->where('is_cancelled', false)->sum('subtotal') - min((float)($p->discount_amount ?? 0), $p->items->where('is_cancelled', false)->sum('subtotal')) + (float)($p->rounding_amount ?? 0)));
+            @endphp
             <div class="text-xs text-slate-500 mt-0.5">
                 Total: <strong class="text-slate-800">{{ $purchases->count() }} Nota</strong> | 
-                Berat Bersih: <strong class="text-slate-800">{{ \App\Services\FormatHelper::weight($purchases->sum('total_net_weight')) }} kg</strong> | 
-                Total Nilai: <strong class="text-emerald-700">{{ \App\Services\FormatHelper::rupiah($purchases->sum('final_amount')) }}</strong>
+                Berat Bersih: <strong class="text-slate-800">{{ \App\Services\FormatHelper::weight($batchTotalNet) }} kg</strong> | 
+                Total Nilai: <strong class="text-emerald-700">{{ \App\Services\FormatHelper::rupiah($batchTotalAmount) }}</strong>
             </div>
         </div>
 
@@ -87,9 +91,9 @@
 
             <a href="{{ route('purchases.batch-pdf', request()->query()) }}" target="_blank"
                class="px-3.5 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
-               title="Unduh Berkas PDF Resmi Kertas HVS">
-                <i data-lucide="download" class="w-4 h-4"></i>
-                <span>Download PDF HVS</span>
+               title="Preview & Unduh Berkas PDF Resmi Kertas HVS">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>Preview PDF HVS</span>
             </a>
 
             <a href="{{ route('purchases.index') }}" class="px-3 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold transition-colors">
@@ -116,8 +120,8 @@
             </div>
             <div class="text-right text-xs">
                 <div class="text-slate-600">Total Transaksi: <strong class="text-slate-900 text-sm font-black">{{ $purchases->count() }} Nota</strong></div>
-                <div class="text-slate-600">Total Berat: <strong class="text-slate-900 font-bold">{{ \App\Services\FormatHelper::weight($purchases->sum('total_net_weight')) }} kg</strong></div>
-                <div class="text-emerald-700 font-bold text-sm">{{ \App\Services\FormatHelper::rupiah($purchases->sum('final_amount')) }}</div>
+                <div class="text-slate-600">Total Berat: <strong class="text-slate-900 font-bold">{{ \App\Services\FormatHelper::weight($batchTotalNet) }} kg</strong></div>
+                <div class="text-emerald-700 font-bold text-sm">{{ \App\Services\FormatHelper::rupiah($batchTotalAmount) }}</div>
             </div>
         </div>
 
@@ -157,7 +161,7 @@
                                     <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
                                         <span class="whitespace-nowrap text-slate-700">Pemasok</span>
                                         <span class="text-center">:</span>
-                                        <span class="text-left pl-1 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->supplier_name }}</span>
+                                        <span class="text-left pl-1 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->supplier_name ?: '-' }}</span>
                                     </div>
                                     @if($purchase->supplier_phone)
                                         <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
@@ -176,114 +180,169 @@
                                         <span class="text-center">:</span>
                                         <span class="text-left pl-1 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->paymentMethod?->name ?? 'Tunai' }}</span>
                                     </div>
-                                    @if($purchase->bank_info)
-                                        <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
-                                            <span class="whitespace-nowrap text-slate-700">Data Bayar</span>
-                                            <span class="text-center">:</span>
-                                            <span class="text-left pl-1 text-[8px] whitespace-nowrap overflow-hidden text-ellipsis" title="{{ $purchase->bank_info }}">{{ $purchase->bank_info }}</span>
-                                        </div>
+                                    @if($purchase->isBankPayment())
+                                        @if($purchase->getBankAccountNumber())
+                                            <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
+                                                <span class="whitespace-nowrap text-slate-700">No. Rekening</span>
+                                                <span class="text-center">:</span>
+                                                <span class="text-left pl-1 font-mono font-bold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->getBankAccountNumber() }}</span>
+                                            </div>
+                                        @endif
+                                        @if($purchase->getBankAccountName())
+                                            <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
+                                                <span class="whitespace-nowrap text-slate-700">Nama Rekening</span>
+                                                <span class="text-center">:</span>
+                                                <span class="text-left pl-1 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->getBankAccountName() }}</span>
+                                            </div>
+                                        @endif
+                                        @if(!$purchase->getBankAccountNumber() && !$purchase->getBankAccountName() && !empty($purchase->bank_info))
+                                            <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
+                                                <span class="whitespace-nowrap text-slate-700">Data Rekening</span>
+                                                <span class="text-center">:</span>
+                                                <span class="text-left pl-1 text-[8px] font-bold whitespace-nowrap overflow-hidden text-ellipsis" title="{{ $purchase->bank_info }}">{{ $purchase->bank_info }}</span>
+                                            </div>
+                                        @endif
                                     @endif
                                 </div>
 
                                 <!-- Items Breakdown -->
                                 <div class="py-1 border-b border-dashed border-slate-400 font-mono text-[9px]">
-                                    @foreach($purchase->items as $item)
-                                        <div class="py-1 {{ !$loop->last ? 'border-b border-dotted border-slate-300' : '' }}">
-                                            <div class="font-bold text-[9.5px] uppercase text-slate-900 leading-tight">
-                                                {{ $item->item_name_snapshot }}
-                                                @if($item->item_type_name)
-                                                    <span class="font-normal text-[8.5px] text-slate-600">({{ $item->item_type_name }})</span>
-                                                @endif
-                                            </div>
-                                            @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
-                                                <div class="flex justify-between text-[8.5px] text-slate-600">
-                                                    <span>
-                                                        @if($item->tare_weight > 0)
-                                                            {{ \App\Services\FormatHelper::number($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight)) }} - {{ \App\Services\FormatHelper::number($item->tare_weight) }} pcs
-                                                            @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight), $item->tare_weight))
+                                    @php
+                                        $activeItems = $purchase->items->where('is_cancelled', false);
+                                        $activeGross = $activeItems->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? ($i->gross_weight > 0 ? $i->gross_weight : ($i->quantity + $i->tare_weight)) : $i->gross_weight);
+                                        $activeTare = $activeItems->sum('tare_weight');
+                                        $activeNet = $activeItems->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? $i->quantity : $i->net_weight);
+                                        $activeSubtotal = $activeItems->sum('subtotal');
+                                        $discount = min((float) ($purchase->discount_amount ?? 0), $activeSubtotal);
+                                        $rounding = (float) ($purchase->rounding_amount ?? 0);
+                                        $activeFinal = max(0, $activeSubtotal - $discount + $rounding);
+                                        $debtDeduction = min((float) ($purchase->debt_deduction_amount ?? 0), $activeFinal);
+                                        $activeNetCash = max(0, $activeFinal - $debtDeduction);
+                                    @endphp
+                                    @if($activeItems->isEmpty())
+                                        <div class="py-2 text-center text-[9px] text-red-600 font-bold uppercase tracking-wider">
+                                            (Semua Barang Dibatalkan)
+                                        </div>
+                                    @else
+                                        @foreach($activeItems as $item)
+                                            <div class="py-1 {{ !$loop->last ? 'border-b border-dotted border-slate-300' : '' }}">
+                                                <div class="font-bold text-[9.5px] uppercase text-slate-900 leading-tight">
+                                                    {{ $item->item_name_snapshot }}
+                                                    @if($item->item_type_name)
+                                                        <span class="font-normal text-[8.5px] text-slate-600">({{ $item->item_type_name }})</span>
+                                                    @endif
+                                                </div>
+                                                @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
+                                                    <div class="flex justify-between text-[8.5px] text-slate-600">
+                                                        <span>
+                                                            @if($item->tare_weight > 0)
+                                                                {{ \App\Services\FormatHelper::number($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight)) }} - {{ \App\Services\FormatHelper::number($item->tare_weight) }} pcs
+                                                                @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight), $item->tare_weight))
+                                                                    ({{ $pct }})
+                                                                @endif
+                                                            @else
+                                                                Satuan
+                                                            @endif
+                                                        </span>
+                                                        <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} {{ $item->unit_type ?: 'pcs' }}</span>
+                                                    </div>
+                                                @else
+                                                    <div class="flex justify-between text-[8.5px] text-slate-600">
+                                                        <span>
+                                                            {{ \App\Services\FormatHelper::weight($item->gross_weight) }} - {{ \App\Services\FormatHelper::weight($item->tare_weight) }} kg
+                                                            @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight, $item->tare_weight))
                                                                 ({{ $pct }})
                                                             @endif
-                                                        @else
-                                                            Satuan
-                                                        @endif
-                                                    </span>
-                                                    <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} {{ $item->unit_type ?: 'pcs' }}</span>
+                                                        </span>
+                                                        <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($item->net_weight) }} kg</span>
+                                                    </div>
+                                                @endif
+                                                <div class="flex justify-between text-[8.5px] pt-0.5">
+                                                    <span class="text-slate-600">@ {{ \App\Services\FormatHelper::rupiah($item->price_per_kg) }}</span>
+                                                    <span class="font-black text-slate-900">{{ \App\Services\FormatHelper::rupiah($item->subtotal) }}</span>
                                                 </div>
-                                            @else
-                                                <div class="flex justify-between text-[8.5px] text-slate-600">
-                                                    <span>
-                                                        {{ \App\Services\FormatHelper::weight($item->gross_weight) }} - {{ \App\Services\FormatHelper::weight($item->tare_weight) }} kg
-                                                        @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight, $item->tare_weight))
-                                                            ({{ $pct }})
-                                                        @endif
-                                                    </span>
-                                                    <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($item->net_weight) }} kg</span>
-                                                </div>
-                                            @endif
-                                            <div class="flex justify-between text-[8.5px] pt-0.5">
-                                                <span class="text-slate-600">@ {{ \App\Services\FormatHelper::rupiah($item->price_per_kg) }}</span>
-                                                <span class="font-black text-slate-900">{{ \App\Services\FormatHelper::rupiah($item->subtotal) }}</span>
                                             </div>
-                                        </div>
-                                    @endforeach
+                                        @endforeach
+                                    @endif
                                 </div>
+
+                                @php
+                                    $grpComm = $activeItems->groupBy('item_name_snapshot');
+                                    $hasMulti = $grpComm->contains(fn($g) => $g->count() > 1);
+                                @endphp
+                                @if($hasMulti)
+                                    <div class="py-1 border-t border-dotted border-slate-300 font-mono text-[8px] text-slate-700">
+                                        <div class="font-bold uppercase text-[7.5px]">Akumulasi Komoditas:</div>
+                                        @foreach($grpComm as $cName => $cGrp)
+                                            @php
+                                                $tW = $cGrp->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? $i->quantity : $i->net_weight);
+                                                $u = $cGrp->first()->unit_type ?: 'kg';
+                                                $tS = $cGrp->sum('subtotal');
+                                            @endphp
+                                            <div class="flex justify-between">
+                                                <span>{{ $cName }}:</span>
+                                                <span class="font-bold">{{ \App\Services\FormatHelper::weight($tW) }} {{ $u }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
 
                                 <!-- Total Calculation -->
                                 <div class="pt-1.5 font-mono text-[9px] space-y-0.5">
                                     <div style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
                                         <span class="whitespace-nowrap text-slate-700">Berat Kotor</span>
                                         <span class="text-center">:</span>
-                                        <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::weight($purchase->total_gross_weight) }} kg</span>
+                                        <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::weight($activeGross) }} kg</span>
                                     </div>
                                     <div style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
                                         <span class="whitespace-nowrap text-slate-700">Pot./Tara</span>
                                         <span class="text-center">:</span>
-                                        <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::weight($purchase->total_tare_weight) }} kg</span>
+                                        <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::weight($activeTare) }} kg</span>
                                     </div>
                                     <div class="font-bold text-slate-900" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
                                         <span class="whitespace-nowrap">BERAT BERSIH</span>
                                         <span class="text-center">:</span>
-                                        <span class="text-right font-black whitespace-nowrap">{{ \App\Services\FormatHelper::weight($purchase->total_net_weight) }} kg</span>
+                                        <span class="text-right font-bold whitespace-nowrap">{{ \App\Services\FormatHelper::weight($activeNet) }} kg</span>
                                     </div>
                                     
                                     <div class="pt-1 border-t border-dotted border-slate-300" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
                                         <span class="whitespace-nowrap text-slate-700">Subtotal</span>
                                         <span class="text-center">:</span>
-                                        <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($purchase->subtotal_amount) }}</span>
+                                        <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($activeSubtotal) }}</span>
                                     </div>
-                                    @if($purchase->discount_amount > 0)
+                                    @if($discount > 0)
                                         <div class="text-slate-600" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
                                             <span class="whitespace-nowrap">Potongan</span>
                                             <span class="text-center">:</span>
-                                            <span class="text-right whitespace-nowrap">- {{ \App\Services\FormatHelper::rupiah($purchase->discount_amount) }}</span>
+                                            <span class="text-right whitespace-nowrap">- {{ \App\Services\FormatHelper::rupiah($discount) }}</span>
                                         </div>
                                     @endif
-                                    @if($purchase->rounding_amount != 0)
+                                    @if($rounding != 0)
                                         <div class="text-slate-600" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
                                             <span class="whitespace-nowrap">Pembulatan</span>
                                             <span class="text-center">:</span>
-                                            <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($purchase->rounding_amount) }}</span>
+                                            <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($rounding) }}</span>
                                         </div>
                                     @endif
 
-                                    <div class="pt-1 border-t border-slate-900 text-[10px] font-black" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
+                                    <div class="pt-1 border-t border-slate-900 text-[9.5px] font-bold" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
                                         <span class="whitespace-nowrap">TOTAL NOTA</span>
                                         <span class="text-center">:</span>
-                                        <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($purchase->final_amount) }}</span>
+                                        <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($activeFinal) }}</span>
                                     </div>
 
-                                    @if($purchase->debt_deduction_amount > 0)
+                                    @if($debtDeduction > 0)
                                         <div class="text-emerald-800 font-semibold" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
                                             <span class="whitespace-nowrap">Potong Hutang</span>
                                             <span class="text-center">:</span>
-                                            <span class="text-right whitespace-nowrap">- {{ \App\Services\FormatHelper::rupiah($purchase->debt_deduction_amount) }}</span>
+                                            <span class="text-right whitespace-nowrap">- {{ \App\Services\FormatHelper::rupiah($debtDeduction) }}</span>
                                         </div>
                                     @endif
 
-                                    <div class="pt-1 border-t border-slate-900 text-[10.5px] font-black" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
+                                    <div class="pt-1 border-t border-slate-900 text-[10px] font-bold" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
                                         <span class="whitespace-nowrap">UANG DITERIMA</span>
                                         <span class="text-center">:</span>
-                                        <span class="text-right whitespace-nowrap text-slate-900">{{ \App\Services\FormatHelper::rupiah($purchase->net_cash_paid ?? ($purchase->final_amount - ($purchase->debt_deduction_amount ?? 0))) }}</span>
+                                        <span class="text-right whitespace-nowrap text-slate-900">{{ \App\Services\FormatHelper::rupiah($activeNetCash) }}</span>
                                     </div>
                                 </div>
 

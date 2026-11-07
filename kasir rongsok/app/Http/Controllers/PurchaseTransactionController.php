@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePurchaseRequest;
 use App\Models\BusinessSetting;
+use App\Models\ItemCategory;
 use App\Models\PaymentMethod;
 use App\Models\PurchaseTransaction;
+use App\Models\PurchaseTransactionItem;
 use App\Models\ScrapItem;
 use App\Models\Supplier;
 use App\Models\User;
@@ -29,9 +31,20 @@ class PurchaseTransactionController extends Controller
      */
     public function create(): View
     {
-        $scrapItems = ScrapItem::with('category')
+        $rawItems = ScrapItem::with(['category', 'stockBalance', 'priceStocks'])
             ->where('is_active', true)
             ->orderBy('name')
+            ->get();
+
+        $scrapItems = [];
+        foreach ($rawItems as $item) {
+            foreach ($item->getPriceTierOptions(onlyWithStock: false) as $opt) {
+                $scrapItems[] = $opt;
+            }
+        }
+
+        $categories = ItemCategory::where('is_active', true)
+            ->orderBy('id')
             ->get();
 
         $suppliers = Supplier::where('is_active', true)
@@ -53,7 +66,7 @@ class PurchaseTransactionController extends Controller
 
         $defaultPrinter = BusinessSetting::get('default_printer_type', 'thermal_58');
 
-        return view('purchases.create', compact('scrapItems', 'suppliers', 'paymentMethods', 'defaultPrinter'));
+        return view('purchases.create', compact('scrapItems', 'categories', 'suppliers', 'paymentMethods', 'defaultPrinter'));
     }
 
     /**
@@ -203,7 +216,11 @@ class PurchaseTransactionController extends Controller
         $dateSuffix = ($startDate && $endDate) ? "{$startDate}_sd_{$endDate}" : date('Ymd_His');
         $filename = "Semua_Nota_Pembelian_{$dateSuffix}.pdf";
 
-        return $pdf->download($filename);
+        if ($request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
     }
 
     /**
@@ -388,6 +405,26 @@ class PurchaseTransactionController extends Controller
         }
 
         return back()->with($res['success'] ? 'success' : 'error', $res['message'] ?? 'Status terkirim.');
+    }
+
+    /**
+     * Cancel / void a single item from a transaction with stock reversal.
+     */
+    public function cancelItem(Request $request, PurchaseTransaction $purchase, PurchaseTransactionItem $item): RedirectResponse
+    {
+        $request->validate([
+            'cancel_reason' => 'required|string|min:3|max:255',
+        ], [
+            'cancel_reason.required' => 'Alasan pembatalan item wajib diisi.',
+            'cancel_reason.min' => 'Alasan pembatalan minimal 3 karakter.',
+        ]);
+
+        try {
+            $this->purchaseService->cancelPurchaseItem($purchase, $item, Auth::user(), $request->input('cancel_reason'));
+            return back()->with('success', "Barang {$item->item_name_snapshot} berhasil dibatalkan dan stok dikembalikan.");
+        } catch (Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     /**

@@ -29,7 +29,7 @@
     <div class="grid grid-cols-2 gap-4 my-4 p-3 bg-slate-50 border border-slate-200 rounded font-sans">
         <div>
             <span class="text-slate-500 font-semibold block">Total Akumulasi Stok:</span>
-            <span class="text-sm font-bold text-slate-900">{{ number_format($totalStock, 2) }} kg ({{ number_format($totalStock / 1000, 2) }} Ton)</span>
+            <span class="text-sm font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($totalStock) }} kg ({{ \App\Services\FormatHelper::weight($totalStock / 1000) }} Ton)</span>
         </div>
         <div class="text-right">
             <span class="text-slate-500 font-semibold block">Total Nilai Persediaan (HPP):</span>
@@ -41,7 +41,7 @@
         <thead class="bg-slate-100 border-b border-slate-300 text-[10px] uppercase font-sans">
             <tr>
                 <th class="p-1.5 border-r border-slate-300">Kode</th>
-                <th class="p-1.5 border-r border-slate-300">Nama Barang Rongsok</th>
+                <th class="p-1.5 border-r border-slate-300">Nama Material Scrap & Daur Ulang</th>
                 <th class="p-1.5 border-r border-slate-300">Kategori</th>
                 <th class="p-1.5 border-r border-slate-300 text-right">Stok Fisik</th>
                 <th class="p-1.5 border-r border-slate-300 text-right">Avg Beli/kg</th>
@@ -60,9 +60,18 @@
                 @endphp
                 <tr>
                     <td class="p-1.5 border-r border-slate-300 font-bold">{{ $item->code }}</td>
-                    <td class="p-1.5 border-r border-slate-300 font-sans font-bold">{{ $item->name }}</td>
+                    <td class="p-1.5 border-r border-slate-300 font-sans font-bold">
+                        <div>{{ $item->name }}</div>
+                        @if($item->priceStocks && $item->priceStocks->count() > 1)
+                            <div class="text-[9px] font-normal text-slate-600 font-mono">
+                                @foreach($item->priceStocks as $ps)
+                                    Rp {{ \App\Services\FormatHelper::number($ps->price_per_kg) }}: {{ \App\Services\FormatHelper::weight($ps->current_stock) }} kg{{ !$loop->last ? ' | ' : '' }}
+                                @endforeach
+                            </div>
+                        @endif
+                    </td>
                     <td class="p-1.5 border-r border-slate-300 font-sans">{{ $item->category?->name }}</td>
-                    <td class="p-1.5 border-r border-slate-300 text-right font-bold">{{ number_format($cur, 2) }} kg</td>
+                    <td class="p-1.5 border-r border-slate-300 text-right font-bold">{{ \App\Services\FormatHelper::weight($cur) }} kg</td>
                     <td class="p-1.5 border-r border-slate-300 text-right">Rp {{ number_format($avg, 0, ',', '.') }}</td>
                     <td class="p-1.5 border-r border-slate-300 text-right font-bold text-purple-900">Rp {{ number_format($val, 0, ',', '.') }}</td>
                     <td class="p-1.5 border-r border-slate-300 text-right">Rp {{ number_format($item->buy_price_per_kg, 0, ',', '.') }}</td>
@@ -73,7 +82,7 @@
         <tfoot class="bg-slate-50 font-bold border-t-2 border-slate-400">
             <tr>
                 <td colspan="3" class="p-2 border-r border-slate-300 text-right font-sans">TOTAL GUDANG:</td>
-                <td class="p-2 border-r border-slate-300 text-right">{{ number_format($totalStock, 2) }} kg</td>
+                <td class="p-2 border-r border-slate-300 text-right">{{ \App\Services\FormatHelper::weight($totalStock) }} kg</td>
                 <td class="p-2 border-r border-slate-300"></td>
                 <td class="p-2 border-r border-slate-300 text-right text-purple-900">Rp {{ number_format($totalValue, 0, ',', '.') }}</td>
                 <td colspan="2"></td>

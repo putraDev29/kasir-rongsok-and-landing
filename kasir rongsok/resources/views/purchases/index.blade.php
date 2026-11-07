@@ -12,7 +12,7 @@
                     <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
                         <i data-lucide="search" class="w-3.5 h-3.5"></i>
                     </span>
-                    <input type="text" name="search" value="{{ $search }}" placeholder="KB-... atau nama..."
+                    <input type="text" name="search" value="{{ $search }}" placeholder="PPJ-... atau nama..."
                            class="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
                 </div>
             </div>
@@ -69,9 +69,9 @@
 
                 <a href="{{ route('purchases.batch-pdf', request()->query()) }}" target="_blank"
                    class="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm"
-                   title="Unduh Berkas PDF Semua Nota (Format 58mm Kertas HVS A4)">
-                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                    <span>Download PDF HVS</span>
+                   title="Preview & Unduh Berkas PDF Semua Nota (Format 58mm Kertas HVS A4)">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                    <span>Preview PDF HVS</span>
                 </a>
 
                 <a href="{{ route('purchases.export-excel', request()->query()) }}"

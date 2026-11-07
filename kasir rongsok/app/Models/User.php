@@ -14,6 +14,7 @@ class User extends Authenticatable
     public const ROLE_SUPER_ADMIN = 'super_admin';
     public const ROLE_ADMIN = 'admin';
     public const ROLE_KASIR = 'kasir';
+    public const ROLE_DRIVER = 'driver';
 
     protected $fillable = [
         'name',
@@ -21,6 +22,9 @@ class User extends Authenticatable
         'password',
         'role',
         'phone',
+        'bank_name',
+        'bank_account_number',
+        'bank_account_name',
         'is_active',
     ];
 
@@ -56,6 +60,29 @@ class User extends Authenticatable
     public function isKasir(): bool
     {
         return $this->role === self::ROLE_KASIR;
+    }
+
+    public function isDriver(): bool
+    {
+        return $this->role === self::ROLE_DRIVER;
+    }
+
+    public function hasBankDetails(): bool
+    {
+        return !empty($this->bank_name) && !empty($this->bank_account_number);
+    }
+
+    public function bankDisplay(): ?string
+    {
+        if (!$this->hasBankDetails()) {
+            return null;
+        }
+
+        $str = "{$this->bank_name} - Rek: {$this->bank_account_number}";
+        if (!empty($this->bank_account_name)) {
+            $str .= " (a/n {$this->bank_account_name})";
+        }
+        return $str;
     }
 
     public function canManageUsers(): bool

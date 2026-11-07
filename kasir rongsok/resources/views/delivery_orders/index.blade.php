@@ -156,6 +156,14 @@
 
                             <td class="py-3 px-4 text-center">
                                 <div class="flex items-center justify-center gap-1.5">
+                                    @if($order->status !== 'delivered')
+                                        <form action="{{ route('delivery-orders.mark-delivered', $order) }}" method="POST" class="inline" onsubmit="return confirm('Konfirmasi bahwa surat jalan ini telah sampai di tujuan / selesai?')">
+                                            @csrf
+                                            <button type="submit" class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50" title="Tandai Sampai di Tujuan (Selesai)">
+                                                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                            </button>
+                                        </form>
+                                    @endif
                                     <button type="button" 
                                             @click="openWaPdfModal({
                                                 title: 'Kirim Surat Jalan Pengiriman PDF via WhatsApp',
@@ -173,10 +181,11 @@
                                         <x-whatsapp-icon class="w-4 h-4" />
                                     </button>
 
-                                    <a href="{{ route('delivery-orders.pdf', $order) }}" target="_blank"
-                                       class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50" title="Unduh PDF Surat Jalan (Resmi)">
+                                    <button type="button"
+                                            @click="openPdfPreview('{{ route('delivery-orders.pdf', $order) }}', 'Surat Jalan {{ $order->delivery_number }}', 'Surat_Jalan_{{ str_replace(['/', ' '], '_', $order->delivery_number) }}.pdf', 'Surat Jalan Pengiriman 2 Rangkap')"
+                                            class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50 cursor-pointer" title="Preview PDF Surat Jalan (2 Rangkap)">
                                         <i data-lucide="file-text" class="w-4 h-4"></i>
-                                    </a>
+                                    </button>
 
                                     @if($order->salesTransaction)
                                         <a href="{{ route('sales.show', $order->salesTransaction) }}" 
@@ -192,9 +201,9 @@
 
                                     <a href="{{ route('delivery-orders.print', $order) }}" target="_blank"
                                        class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] flex items-center gap-1"
-                                       title="Cetak PDF HVS Landscape Bagi 2">
+                                       title="Preview & Cetak HVS Landscape Bagi 2 (2 Rangkap)">
                                         <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-                                        <span>PDF</span>
+                                        <span>Print</span>
                                     </a>
 
                                     <a href="{{ route('delivery-orders.show', $order) }}" 

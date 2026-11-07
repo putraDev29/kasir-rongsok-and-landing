@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Faktur_{{ $sale->invoice_number }}</title>
+    <title>Invoice_{{ $sale->invoice_number }}</title>
     <style>
         @page {
             size: a5 portrait;
@@ -91,6 +91,24 @@
         }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
+        .master-row {
+            background-color: #f1f5f9;
+        }
+        .variant-row td {
+            background-color: #f8fafc;
+            font-size: 8px;
+            color: #334155;
+            padding: 3px 6px;
+            border-top: 1px dashed #cbd5e1;
+        }
+        .variant-badge {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            padding: 1px 4px;
+            border-radius: 2px;
+            font-weight: bold;
+            font-size: 7.5px;
+        }
         .total-box {
             margin-top: 10px;
             float: right;
@@ -151,8 +169,11 @@
             </td>
             <td style="vertical-align: middle; text-align: right;">
                 <div class="doc-title">
-                    <div class="main">FAKTUR PENJUALAN PARTAI</div>
+                    <div class="main">INVOICE</div>
                     <div class="num">{{ $sale->invoice_number }}</div>
+                    <div style="font-size: 8px; color: {{ $sale->isPickup() ? '#047857' : '#1d4ed8' }}; font-weight: bold; margin-top: 2px;">
+                        {{ $sale->isPickup() ? 'DIAMBIL SENDIRI DI TEMPAT' : 'PENGIRIMAN ARMADA PERUSAHAAN' }}
+                    </div>
                 </div>
             </td>
         </tr>
@@ -178,12 +199,14 @@
                 <td class="meta-val">{{ $sale->buyer_phone ?: '-' }}</td>
             </tr>
             <tr>
-                <td class="meta-label">Metode Bayar</td>
-                <td>:</td>
-                <td class="meta-val">{{ $sale->paymentMethod?->name ?? 'Transfer Bank' }}</td>
-                <td class="meta-label">Alamat Kirim</td>
-                <td>:</td>
-                <td class="meta-val">{{ $sale->buyer_address ?: '-' }}</td>
+                <td class="meta-label">{{ $sale->isPickup() ? 'Metode Serah' : 'Alamat Kirim' }}</td>
+                <td style="width: 5px;">:</td>
+                <td class="meta-val" colspan="4">
+                    {{ $sale->isPickup() ? 'Diambil Sendiri di Depo/Gudang' : ($sale->buyer_address ?: '-') }}
+                    @if($sale->notes)
+                        <span style="font-weight: normal; color: #64748b; font-size: 8px;">({{ $sale->notes }})</span>
+                    @endif
+                </td>
             </tr>
         </table>
     </div>
@@ -194,22 +217,53 @@
             <tr>
                 <th class="text-center" style="width: 20px;">No</th>
                 <th style="width: 60px;">Kode</th>
-                <th>Nama Barang Rongsok</th>
+                <th>Nama Material Scrap & Daur Ulang</th>
                 <th class="text-right" style="width: 65px;">Berat (kg)</th>
                 <th class="text-right" style="width: 70px;">Harga Jual/kg</th>
                 <th class="text-right" style="width: 85px;">Subtotal (Rp)</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($sale->items as $idx => $it)
-                <tr style="{{ $idx % 2 === 1 ? 'background-color: #f8fafc;' : '' }}">
+            @foreach($sale->grouped_master_items as $idx => $master)
+                <!-- Master Item (Total Akumulasi Master) -->
+                <tr class="{{ $master->has_variants ? 'master-row' : ($idx % 2 === 1 ? 'bg-alt' : '') }}">
                     <td class="text-center">{{ $idx + 1 }}</td>
-                    <td><code>{{ $it->item_code_snapshot ?: ($it->scrapItem?->code ?? '-') }}</code></td>
-                    <td><strong>{{ $it->item_name_snapshot }}</strong></td>
-                    <td class="text-right" style="font-weight: bold;">{{ number_format($it->weight, 2, ',', '.') }} kg</td>
-                    <td class="text-right">Rp {{ number_format($it->sell_price_per_kg, 0, ',', '.') }}</td>
-                    <td class="text-right" style="font-weight: bold;">Rp {{ number_format($it->subtotal, 0, ',', '.') }}</td>
+                    <td><code>{{ $master->item_code }}</code></td>
+                    <td>
+                        <strong>{{ $master->item_name }}</strong>
+                        @if($master->has_variants)
+                            <span style="font-size: 7.5px; color: #2563eb; font-weight: normal; margin-left: 3px;">[Total Master: {{ $master->items->count() }} Varian]</span>
+                        @endif
+                    </td>
+                    <td class="text-right" style="font-weight: bold;">{{ \App\Services\FormatHelper::weight($master->total_weight) }} kg</td>
+                    <td class="text-right">
+                        @if($master->has_variants)
+                            <span style="font-size: 7.5px; color: #64748b;">Rerata Rp {{ number_format($master->avg_sell_price, 0, ',', '.') }}</span>
+                        @else
+                            Rp {{ number_format($master->items->first()->sell_price_per_kg, 0, ',', '.') }}
+                        @endif
+                    </td>
+                    <td class="text-right" style="font-weight: bold;">Rp {{ number_format($master->total_subtotal, 0, ',', '.') }}</td>
                 </tr>
+
+                <!-- Rincian Jenis Varian (Bila Ada Varian) -->
+                @if($master->has_variants)
+                    @foreach($master->items as $vIt)
+                        <tr class="variant-row">
+                            <td class="text-center" style="color: #64748b;">↳</td>
+                            <td style="color: #94a3b8; font-size: 7.5px;">{{ $vIt->item_code_snapshot ?: '-' }}</td>
+                            <td style="padding-left: 14px;">
+                                <span class="variant-badge">Varian: {{ $vIt->item_type_name ?: 'Standar' }}</span>
+                                @if($vIt->notes)
+                                    <span style="color: #64748b; font-size: 7px; font-style: italic;">({{ $vIt->notes }})</span>
+                                @endif
+                            </td>
+                            <td class="text-right" style="color: #334155;">{{ \App\Services\FormatHelper::weight($vIt->weight) }} kg</td>
+                            <td class="text-right" style="color: #334155;">Rp {{ number_format($vIt->sell_price_per_kg, 0, ',', '.') }}</td>
+                            <td class="text-right" style="font-weight: bold; color: #1e293b;">Rp {{ number_format($vIt->subtotal, 0, ',', '.') }}</td>
+                        </tr>
+                    @endforeach
+                @endif
             @endforeach
         </tbody>
     </table>
@@ -219,7 +273,7 @@
         <table class="total-table">
             <tr>
                 <td style="color: #64748b;">Total Muatan:</td>
-                <td class="text-right" style="font-weight: bold;">{{ number_format($sale->total_weight, 2, ',', '.') }} kg</td>
+                <td class="text-right" style="font-weight: bold;">{{ \App\Services\FormatHelper::weight($sale->total_weight) }} kg</td>
             </tr>
             @if($sale->discount_amount > 0)
                 <tr>
@@ -239,17 +293,21 @@
         <div class="sig-col">
             Diterima Oleh (Pembeli/Pabrik),<br>
             <div class="sig-space"></div>
-            <strong>( .................................................. )</strong>
+            <strong>( {{ $sale->buyer_name }} )</strong>
         </div>
         <div class="sig-col" style="float: right;">
-            Hormat Kami (Depo Pengirim),<br>
-            <div class="sig-space"></div>
+            Hormat Kami ({{ $sale->isPickup() ? 'Kasir / Pengelola' : 'Depo Pengirim' }}),<br>
+            <div class="sig-space" style="text-align: center;">
+                @if(\App\Models\BusinessSetting::hasOwnerSignature())
+                    <img src="{{ \App\Models\BusinessSetting::ownerSignatureBase64() }}" alt="TTD Owner" style="height: 42px; max-height: 44px; width: auto; max-width: 140px; margin: 0 auto; display: block;">
+                @endif
+            </div>
             <strong>( {{ $sale->user?->name ?? 'Admin / Kasir' }} )</strong>
         </div>
     </div>
 
     <div class="footer-note">
-        *Faktur ini merupakan bukti resmi pengiriman muatan rongsok partai besar. Dokumen sah terbitan sistem otomatis.
+        {{ $sale->isPickup() ? '*Invoice ini merupakan bukti resmi transaksi penjualan barang yang diambil langsung oleh pembeli di tempat/depo.' : '*Invoice ini merupakan bukti resmi pengiriman muatan rongsok partai besar. Dokumen sah terbitan sistem otomatis.' }}
     </div>
 
 </body>
