@@ -1,10 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Support standalone build for cPanel Node.js App or export mode
-  output: process.env.NEXT_OUTPUT_MODE === "export" ? "export" : "standalone",
+  // Default to export for standard cPanel public_html deployment
+  output: process.env.NEXT_OUTPUT_MODE === "standalone" ? "standalone" : "export",
   images: {
-    // Enable unoptimized to ensure compatibility with standard cPanel hosting without requiring Sharp binaries
+    // Enable unoptimized for static export on cPanel
     unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: "**" },

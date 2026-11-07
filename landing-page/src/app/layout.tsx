@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { getLandingPageData } from "@/services/landing-page.service";
 
-export const dynamic = "force-dynamic";
-
 export async function generateMetadata(): Promise<Metadata> {
   const data = await getLandingPageData();
   const seo = data.seo;
