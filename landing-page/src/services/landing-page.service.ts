@@ -1,4 +1,4 @@
-import { fetchApi } from "@/lib/api";
+import { fetchApi, getApiBaseUrl } from "@/lib/api";
 import {
   ContactSubmissionPayload,
   ContactSubmissionResponse,
@@ -436,8 +436,7 @@ export async function getLandingPageData(): Promise<LandingPageData> {
 export async function submitContactInquiry(
   payload: ContactSubmissionPayload
 ): Promise<ContactSubmissionResponse> {
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-  const url = `${API_BASE_URL.replace(/\/+$/, "")}/api/landing-page/contact`;
+  const url = `${getApiBaseUrl()}/api/landing-page/contact`;
 
   try {
     const res = await fetch(url, {
@@ -470,8 +469,7 @@ export async function submitContactInquiry(
 export async function submitCustomerTestimonial(
   payload: TestimonialSubmissionPayload
 ): Promise<TestimonialSubmissionResponse> {
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-  const url = `${API_BASE_URL.replace(/\/+$/, "")}/api/landing-page/testimonials`;
+  const url = `${getApiBaseUrl()}/api/landing-page/testimonials`;
 
   try {
     const res = await fetch(url, {

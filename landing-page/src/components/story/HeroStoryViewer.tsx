@@ -21,6 +21,7 @@ import {
   User,
 } from "lucide-react";
 import { StoryItem, StoryComment, LandingSettings } from "@/types/landing-page";
+import { getApiBaseUrl } from "@/lib/api";
 
 interface HeroStoryViewerProps {
   initialStories?: StoryItem[];
@@ -248,7 +249,7 @@ export function HeroStoryViewer({
 
     // Call API (fire-and-forget / non-blocking)
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+      const apiBase = getApiBaseUrl();
       await fetch(`${apiBase}/api/landing-page/stories/${storyId}/like`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -283,7 +284,7 @@ export function HeroStoryViewer({
     const rawComment = commentText.trim();
 
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+      const apiBase = getApiBaseUrl();
       const res = await fetch(`${apiBase}/api/landing-page/stories/${storyId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

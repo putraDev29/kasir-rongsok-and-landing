@@ -1,15 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Support standalone build for cPanel Node.js App or export mode
+  output: process.env.NEXT_OUTPUT_MODE === "export" ? "export" : "standalone",
   images: {
-    dangerouslyAllowLocalIP: true,
+    // Enable unoptimized to ensure compatibility with standard cPanel hosting without requiring Sharp binaries
+    unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: "**" },
-      { protocol: "http", hostname: "localhost" },
-      { protocol: "http", hostname: "localhost", port: "8000" },
-      { protocol: "http", hostname: "127.0.0.1" },
-      { protocol: "http", hostname: "127.0.0.1", port: "8000" },
-      { protocol: "http", hostname: "192.168.**" },
+      { protocol: "http", hostname: "**" },
     ],
   },
   turbopack: {

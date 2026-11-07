@@ -1,7 +1,26 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+export function getApiBaseUrl(): string {
+  if (typeof window !== "undefined") {
+    // In client browser:
+    // If NEXT_PUBLIC_API_BASE_URL is explicitly defined, use it.
+    // Otherwise fallback to the current website domain origin.
+    if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+      return process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/+$/, "");
+    }
+    return window.location.origin;
+  }
+
+  // On Server-side (Node.js SSR):
+  return (
+    process.env.INTERNAL_API_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    "http://127.0.0.1:8000"
+  ).replace(/\/+$/, "");
+}
 
 export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const url = `${API_BASE_URL.replace(/\/+$/, "")}/${endpoint.replace(/^\/+/, "")}`;
+  const baseUrl = getApiBaseUrl();
+  const cleanEndpoint = endpoint.replace(/^\/+/, "");
+  const url = `${baseUrl}/${cleanEndpoint}`;
 
   try {
     const res = await fetch(url, {
