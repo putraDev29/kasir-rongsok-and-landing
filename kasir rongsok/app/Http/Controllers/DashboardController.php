@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\ReportService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -18,7 +19,7 @@ class DashboardController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
 
-        $metrics = $this->reportService->getDashboardMetrics($period, $startDate, $endDate);
+        $metrics = $this->reportService->getDashboardMetrics($period, $startDate, $endDate, Auth::user());
 
         return view('dashboard.index', compact('metrics', 'period', 'startDate', 'endDate'));
     }

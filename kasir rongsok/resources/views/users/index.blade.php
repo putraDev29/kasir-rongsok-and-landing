@@ -51,6 +51,10 @@
                                     <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">
                                         Admin
                                     </span>
+                                @elseif($u->role === 'admin_gas')
+                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-200">
+                                        Admin Gas (LPG & Oksigen)
+                                    </span>
                                 @elseif($u->role === 'driver')
                                     <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
                                         Sopir / Driver
@@ -152,7 +156,8 @@
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Peran Akses *</label>
                         <select name="role" x-model="form.role" required class="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-emerald-500 font-medium">
                             <option value="kasir">Kasir Timbang</option>
-                            <option value="admin">Admin</option>
+                            <option value="admin_gas">Admin Gas (LPG & Oksigen)</option>
+                            <option value="admin">Admin Operasional</option>
                             <option value="driver">Sopir / Driver Armada</option>
                             <option value="super_admin">Super Admin (Owner)</option>
                         </select>

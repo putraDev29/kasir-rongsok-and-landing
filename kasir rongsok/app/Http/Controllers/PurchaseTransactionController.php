@@ -31,8 +31,12 @@ class PurchaseTransactionController extends Controller
      */
     public function create(): View
     {
+        $user = Auth::user();
+        $isGas = $user && $user->isAdminGas();
+
         $rawItems = ScrapItem::with(['category', 'stockBalance', 'priceStocks'])
             ->where('is_active', true)
+            ->when($isGas, fn($q) => $q->where('item_type', 'gas'), fn($q) => $q->where('item_type', 'rongsok'))
             ->orderBy('name')
             ->get();
 
@@ -44,6 +48,7 @@ class PurchaseTransactionController extends Controller
         }
 
         $categories = ItemCategory::where('is_active', true)
+            ->when($isGas, fn($q) => $q->where('type', 'gas'), fn($q) => $q->where('type', 'rongsok'))
             ->orderBy('id')
             ->get();
 
@@ -120,6 +125,8 @@ class PurchaseTransactionController extends Controller
             })
             ->latest('transaction_date');
 
+        $this->scopeByCommodityType($query);
+
         $transactions = $query->paginate(15)->withQueryString();
         $cashiers = User::where('is_active', true)->get();
 
@@ -160,7 +167,7 @@ class PurchaseTransactionController extends Controller
         $status = $request->query('status', 'completed');
         $cashierId = $request->query('cashier_id');
 
-        $purchases = PurchaseTransaction::with(['user', 'supplier.debts', 'paymentMethod', 'items.scrapItem'])
+        $purchasesQuery = PurchaseTransaction::with(['user', 'supplier.debts', 'paymentMethod', 'items.scrapItem'])
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('invoice_number', 'LIKE', "%{$search}%")
@@ -171,9 +178,10 @@ class PurchaseTransactionController extends Controller
             ->when($endDate, fn($q) => $q->whereDate('transaction_date', '<=', $endDate))
             ->when($status, fn($q) => $q->where('status', $status))
             ->when($cashierId, fn($q) => $q->where('user_id', $cashierId))
-            ->latest('transaction_date')
-            ->take(150)
-            ->get();
+            ->latest('transaction_date');
+
+        $this->scopeByCommodityType($purchasesQuery);
+        $purchases = $purchasesQuery->take(150)->get();
 
         $settings = BusinessSetting::pluck('value', 'key')->all();
 
@@ -191,7 +199,7 @@ class PurchaseTransactionController extends Controller
         $status = $request->query('status', 'completed');
         $cashierId = $request->query('cashier_id');
 
-        $purchases = PurchaseTransaction::with(['user', 'supplier.debts', 'paymentMethod', 'items.scrapItem'])
+        $purchasesQuery = PurchaseTransaction::with(['user', 'supplier.debts', 'paymentMethod', 'items.scrapItem'])
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('invoice_number', 'LIKE', "%{$search}%")
@@ -202,9 +210,10 @@ class PurchaseTransactionController extends Controller
             ->when($endDate, fn($q) => $q->whereDate('transaction_date', '<=', $endDate))
             ->when($status, fn($q) => $q->where('status', $status))
             ->when($cashierId, fn($q) => $q->where('user_id', $cashierId))
-            ->latest('transaction_date')
-            ->take(150)
-            ->get();
+            ->latest('transaction_date');
+
+        $this->scopeByCommodityType($purchasesQuery);
+        $purchases = $purchasesQuery->take(150)->get();
 
         $totalWeight = (float) $purchases->sum('total_net_weight');
         $totalAmount = (float) $purchases->sum('final_amount');
@@ -234,7 +243,7 @@ class PurchaseTransactionController extends Controller
         $status = $request->query('status');
         $cashierId = $request->query('cashier_id');
 
-        $purchases = PurchaseTransaction::with(['user', 'supplier', 'paymentMethod', 'items'])
+        $purchasesQuery = PurchaseTransaction::with(['user', 'supplier', 'paymentMethod', 'items'])
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('invoice_number', 'LIKE', "%{$search}%")
@@ -245,8 +254,10 @@ class PurchaseTransactionController extends Controller
             ->when($endDate, fn($q) => $q->whereDate('transaction_date', '<=', $endDate))
             ->when($status, fn($q) => $q->where('status', $status))
             ->when($cashierId, fn($q) => $q->where('user_id', $cashierId))
-            ->latest('transaction_date')
-            ->get();
+            ->latest('transaction_date');
+
+        $this->scopeByCommodityType($purchasesQuery);
+        $purchases = $purchasesQuery->get();
 
         $filename = 'Rekap_Pembelian_' . date('Ymd_His') . '.xls';
 
@@ -266,7 +277,7 @@ class PurchaseTransactionController extends Controller
         $status = $request->query('status', 'completed');
         $cashierId = $request->query('cashier_id');
 
-        $purchases = PurchaseTransaction::with(['user', 'supplier', 'paymentMethod', 'items.scrapItem'])
+        $purchasesQuery = PurchaseTransaction::with(['user', 'supplier', 'paymentMethod', 'items.scrapItem'])
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('invoice_number', 'LIKE', "%{$search}%")
@@ -277,9 +288,10 @@ class PurchaseTransactionController extends Controller
             ->when($endDate, fn($q) => $q->whereDate('transaction_date', '<=', $endDate))
             ->when($status, fn($q) => $q->where('status', $status))
             ->when($cashierId, fn($q) => $q->where('user_id', $cashierId))
-            ->latest('transaction_date')
-            ->take(150)
-            ->get();
+            ->latest('transaction_date');
+
+        $this->scopeByCommodityType($purchasesQuery);
+        $purchases = $purchasesQuery->take(150)->get();
 
         $count = $purchases->count();
         $totalWeight = (float) $purchases->sum('total_net_weight');
@@ -351,7 +363,7 @@ class PurchaseTransactionController extends Controller
             return back()->with('error', 'Nomor WhatsApp tujuan wajib diisi.');
         }
 
-        $purchases = PurchaseTransaction::with(['user', 'supplier.debts', 'paymentMethod', 'items.scrapItem'])
+        $purchasesQuery = PurchaseTransaction::with(['user', 'supplier.debts', 'paymentMethod', 'items.scrapItem'])
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('invoice_number', 'LIKE', "%{$search}%")
@@ -362,9 +374,10 @@ class PurchaseTransactionController extends Controller
             ->when($endDate, fn($q) => $q->whereDate('transaction_date', '<=', $endDate))
             ->when($status, fn($q) => $q->where('status', $status))
             ->when($cashierId, fn($q) => $q->where('user_id', $cashierId))
-            ->latest('transaction_date')
-            ->take(150)
-            ->get();
+            ->latest('transaction_date');
+
+        $this->scopeByCommodityType($purchasesQuery);
+        $purchases = $purchasesQuery->take(150)->get();
 
         $count = $purchases->count();
         $totalWeight = (float) $purchases->sum('total_net_weight');
@@ -444,6 +457,22 @@ class PurchaseTransactionController extends Controller
         } catch (Exception $e) {
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Scope transactions query by commodity type (gas vs rongsok).
+     */
+    protected function scopeByCommodityType($query)
+    {
+        $user = Auth::user();
+        if ($user && $user->isAdminGas()) {
+            return $query->whereHas('items.scrapItem', fn($q) => $q->where('item_type', 'gas'));
+        }
+
+        return $query->where(function ($sub) {
+            $sub->whereHas('items.scrapItem', fn($q) => $q->where('item_type', 'rongsok'))
+                ->orDoesntHave('items');
+        });
     }
 }
 

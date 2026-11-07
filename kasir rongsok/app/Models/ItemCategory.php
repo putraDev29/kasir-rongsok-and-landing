@@ -13,6 +13,7 @@ class ItemCategory extends Model
     protected $fillable = [
         'name',
         'slug',
+        'type',
         'description',
         'is_active',
     ];

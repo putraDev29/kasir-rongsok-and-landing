@@ -111,8 +111,8 @@
                     <span>Riwayat Pembelian</span>
                 </a>
 
-                {{-- FITUR OWNER / SUPER ADMIN --}}
-                @if(Auth::user()->isSuperAdmin())
+                {{-- FITUR OWNER / SUPER ADMIN / ADMIN GAS --}}
+                @if(Auth::user()->isSuperAdmin() || Auth::user()->isAdminGas())
                     <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">2. Penjualan & Ekspedisi</div>
 
                     <a href="{{ route('sales.index') }}" 
@@ -238,7 +238,7 @@
                         <div class="text-xs font-semibold text-white truncate">{{ Auth::user()->name }}</div>
                         <div class="flex items-center gap-1.5 mt-0.5">
                             <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-medium leading-none 
-                                {{ Auth::user()->isSuperAdmin() ? 'bg-purple-900/60 text-purple-300 border border-purple-700/50' : (Auth::user()->isAdmin() ? 'bg-blue-900/60 text-blue-300 border border-blue-700/50' : 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50') }}">
+                                {{ Auth::user()->isAdminGas() ? 'bg-amber-900/60 text-amber-300 border border-amber-700/50' : (Auth::user()->isSuperAdmin() ? 'bg-purple-900/60 text-purple-300 border border-purple-700/50' : (Auth::user()->isAdmin() ? 'bg-blue-900/60 text-blue-300 border border-blue-700/50' : 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50')) }}">
                                 {{ strtoupper(str_replace('_', ' ', Auth::user()->role)) }}
                             </span>
                             @if(Auth::user()->hasBankDetails())

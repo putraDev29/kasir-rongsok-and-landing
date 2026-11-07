@@ -18,13 +18,25 @@ class ReportService
     /**
      * Get real-time dashboard analytics with period filtering.
      */
-    public function getDashboardMetrics(string $period = 'today', ?string $startDate = null, ?string $endDate = null): array
+    public function getDashboardMetrics(string $period = 'today', ?string $startDate = null, ?string $endDate = null, ?User $user = null): array
     {
+        $user = $user ?: auth()->user();
+        $isGas = $user && $user->isAdminGas();
+
         [$start, $end] = $this->resolveDateRange($period, $startDate, $endDate);
 
         // Purchases within period
         $purchasesQuery = PurchaseTransaction::where('status', PurchaseTransaction::STATUS_COMPLETED)
             ->whereBetween('transaction_date', [$start, $end]);
+
+        if ($isGas) {
+            $purchasesQuery->whereHas('items.scrapItem', fn($q) => $q->where('item_type', 'gas'));
+        } else {
+            $purchasesQuery->where(function ($sub) {
+                $sub->whereHas('items.scrapItem', fn($q) => $q->where('item_type', 'rongsok'))
+                    ->orDoesntHave('items');
+            });
+        }
 
         $totalPurchasesAmount = (float) $purchasesQuery->sum('final_amount');
         $totalPurchasesWeight = (float) $purchasesQuery->sum('total_net_weight');
@@ -34,6 +46,12 @@ class ReportService
         $salesQuery = SalesTransaction::where('status', SalesTransaction::STATUS_COMPLETED)
             ->whereBetween('transaction_date', [$start, $end]);
 
+        if ($isGas) {
+            $salesQuery->whereHas('items.scrapItem', fn($q) => $q->where('item_type', 'gas'));
+        } else {
+            $salesQuery->whereHas('items.scrapItem', fn($q) => $q->where('item_type', 'rongsok'));
+        }
+
         $totalSalesAmount = (float) $salesQuery->sum('final_amount');
         $totalSalesWeight = (float) $salesQuery->sum('total_weight');
         $totalSalesProfit = (float) $salesQuery->sum('estimated_profit');
@@ -42,29 +60,50 @@ class ReportService
         $totalExpensesAmount = (float) Expense::whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])->sum('amount');
 
         // Current stock inventory metrics (snapshot right now)
-        $totalStockKg = (float) StockBalance::sum('current_stock');
-        $estimatedStockValue = (float) DB::table('stock_balances')
-            ->selectRaw('SUM(current_stock * average_buy_price) as total_val')
-            ->value('total_val');
+        $stockQuery = StockBalance::query();
+        if ($isGas) {
+            $stockQuery->whereHas('scrapItem', fn($q) => $q->where('item_type', 'gas'));
+        } else {
+            $stockQuery->whereHas('scrapItem', fn($q) => $q->where('item_type', 'rongsok'));
+        }
+        $totalStockKg = (float) $stockQuery->sum('current_stock');
+
+        $valQuery = DB::table('stock_balances')
+            ->join('scrap_items', 'stock_balances.scrap_item_id', '=', 'scrap_items.id');
+        if ($isGas) {
+            $valQuery->where('scrap_items.item_type', 'gas');
+        } else {
+            $valQuery->where('scrap_items.item_type', 'rongsok');
+        }
+        $estimatedStockValue = (float) $valQuery->selectRaw('SUM(stock_balances.current_stock * stock_balances.average_buy_price) as total_val')->value('total_val');
 
         // Top 5 items with largest available stock
-        $topStockItems = ScrapItem::with('stockBalance', 'category')
+        $topStockQuery = ScrapItem::with('stockBalance', 'category')
             ->join('stock_balances', 'scrap_items.id', '=', 'stock_balances.scrap_item_id')
-            ->where('stock_balances.current_stock', '>', 0)
-            ->orderByDesc('stock_balances.current_stock')
+            ->where('stock_balances.current_stock', '>', 0);
+        if ($isGas) {
+            $topStockQuery->where('scrap_items.item_type', 'gas');
+        } else {
+            $topStockQuery->where('scrap_items.item_type', 'rongsok');
+        }
+        $topStockItems = $topStockQuery->orderByDesc('stock_balances.current_stock')
             ->take(5)
             ->get(['scrap_items.*', 'stock_balances.current_stock as current_stock_qty', 'stock_balances.average_buy_price']);
 
         // Low stock items
-        $lowStockItems = ScrapItem::with('stockBalance', 'category')
+        $lowStockQuery = ScrapItem::with('stockBalance', 'category')
             ->join('stock_balances', 'scrap_items.id', '=', 'stock_balances.scrap_item_id')
             ->whereRaw('stock_balances.current_stock <= scrap_items.min_stock_alert')
             ->where('scrap_items.min_stock_alert', '>', 0)
-            ->where('scrap_items.is_active', true)
-            ->take(5)
-            ->get();
+            ->where('scrap_items.is_active', true);
+        if ($isGas) {
+            $lowStockQuery->where('scrap_items.item_type', 'gas');
+        } else {
+            $lowStockQuery->where('scrap_items.item_type', 'rongsok');
+        }
+        $lowStockItems = $lowStockQuery->take(5)->get();
 
-        // 7-day purchase trend chart data
+        // 7-day trend chart data
         $chartLabels = [];
         $chartPurchases = [];
         $chartWeights = [];
@@ -75,13 +114,20 @@ class ReportService
             $dayStart = $day->copy()->startOfDay();
             $dayEnd = $day->copy()->endOfDay();
 
-            $daySum = (float) PurchaseTransaction::where('status', PurchaseTransaction::STATUS_COMPLETED)
-                ->whereBetween('transaction_date', [$dayStart, $dayEnd])
-                ->sum('final_amount');
+            $dayPurchasesQuery = PurchaseTransaction::where('status', PurchaseTransaction::STATUS_COMPLETED)
+                ->whereBetween('transaction_date', [$dayStart, $dayEnd]);
 
-            $dayWeight = (float) PurchaseTransaction::where('status', PurchaseTransaction::STATUS_COMPLETED)
-                ->whereBetween('transaction_date', [$dayStart, $dayEnd])
-                ->sum('total_net_weight');
+            if ($isGas) {
+                $dayPurchasesQuery->whereHas('items.scrapItem', fn($q) => $q->where('item_type', 'gas'));
+            } else {
+                $dayPurchasesQuery->where(function ($sub) {
+                    $sub->whereHas('items.scrapItem', fn($q) => $q->where('item_type', 'rongsok'))
+                        ->orDoesntHave('items');
+                });
+            }
+
+            $daySum = (float) $dayPurchasesQuery->sum('final_amount');
+            $dayWeight = (float) $dayPurchasesQuery->sum('total_net_weight');
 
             $chartLabels[] = $dayLabel;
             $chartPurchases[] = $daySum;
@@ -89,10 +135,19 @@ class ReportService
         }
 
         // Recent transactions
-        $recentTransactions = PurchaseTransaction::with(['user', 'supplier'])
-            ->latest('transaction_date')
-            ->take(8)
-            ->get();
+        $recentQuery = PurchaseTransaction::with(['user', 'supplier'])
+            ->latest('transaction_date');
+
+        if ($isGas) {
+            $recentQuery->whereHas('items.scrapItem', fn($q) => $q->where('item_type', 'gas'));
+        } else {
+            $recentQuery->where(function ($sub) {
+                $sub->whereHas('items.scrapItem', fn($q) => $q->where('item_type', 'rongsok'))
+                    ->orDoesntHave('items');
+            });
+        }
+
+        $recentTransactions = $recentQuery->take(8)->get();
 
         // Recent activity logs
         $recentActivities = ActivityLog::with('user')
@@ -101,6 +156,7 @@ class ReportService
             ->get();
 
         return [
+            'is_gas' => $isGas,
             'period' => $period,
             'start_date' => $start->toDateString(),
             'end_date' => $end->toDateString(),

@@ -15,6 +15,7 @@ class User extends Authenticatable
     public const ROLE_ADMIN = 'admin';
     public const ROLE_KASIR = 'kasir';
     public const ROLE_DRIVER = 'driver';
+    public const ROLE_ADMIN_GAS = 'admin_gas';
 
     protected $fillable = [
         'name',
@@ -67,6 +68,23 @@ class User extends Authenticatable
         return $this->role === self::ROLE_DRIVER;
     }
 
+    public function isAdminGas(): bool
+    {
+        return $this->role === self::ROLE_ADMIN_GAS;
+    }
+
+    public function roleLabel(): string
+    {
+        return match ($this->role) {
+            self::ROLE_SUPER_ADMIN => 'Super Admin (Owner)',
+            self::ROLE_ADMIN => 'Admin Operasional',
+            self::ROLE_ADMIN_GAS => 'Admin Gas (Elpiji & Oksigen)',
+            self::ROLE_KASIR => 'Kasir',
+            self::ROLE_DRIVER => 'Driver / Sopir',
+            default => ucfirst(str_replace('_', ' ', $this->role)),
+        };
+    }
+
     public function hasBankDetails(): bool
     {
         return !empty($this->bank_name) && !empty($this->bank_account_number);
@@ -97,22 +115,22 @@ class User extends Authenticatable
 
     public function canManagePrices(): bool
     {
-        return $this->isSuperAdmin();
+        return $this->isSuperAdmin() || $this->isAdminGas();
     }
 
     public function canAdjustStock(): bool
     {
-        return $this->isSuperAdmin();
+        return $this->isSuperAdmin() || $this->isAdminGas();
     }
 
     public function canCancelTransactions(): bool
     {
-        return $this->isSuperAdmin();
+        return $this->isSuperAdmin() || $this->isAdminGas();
     }
 
     public function canViewReports(): bool
     {
-        return $this->isSuperAdmin();
+        return $this->isSuperAdmin() || $this->isAdminGas();
     }
 
     public function purchaseTransactions(): HasMany

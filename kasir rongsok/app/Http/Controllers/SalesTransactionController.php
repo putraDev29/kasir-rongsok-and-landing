@@ -27,12 +27,21 @@ class SalesTransactionController extends Controller
 
     public function index(Request $request): View
     {
+        $user = Auth::user();
+        $isGas = $user && $user->isAdminGas();
+
         $search = $request->query('search');
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
         $status = $request->query('status');
 
-        $query = SalesTransaction::with(['user', 'paymentMethod', 'items'])
+        $query = SalesTransaction::with(['user', 'paymentMethod', 'items.scrapItem'])
+            ->when($isGas, function ($q) use ($user) {
+                $q->where(function ($sub) use ($user) {
+                    $sub->where('user_id', $user->id)
+                        ->orWhereHas('items.scrapItem', fn($sq) => $sq->where('item_type', 'gas'));
+                });
+            })
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('invoice_number', 'LIKE', "%{$search}%")
@@ -52,21 +61,35 @@ class SalesTransactionController extends Controller
 
         $transactions = $query->paginate(15)->withQueryString();
 
-        $totalSales = (float) SalesTransaction::where('status', 'completed')->sum('final_amount');
-        $totalProfit = (float) SalesTransaction::where('status', 'completed')->sum('estimated_profit');
+        $sumQuery = SalesTransaction::where('status', 'completed');
+        if ($isGas) {
+            $sumQuery->where(function ($sub) use ($user) {
+                $sub->where('user_id', $user->id)
+                    ->orWhereHas('items.scrapItem', fn($sq) => $sq->where('item_type', 'gas'));
+            });
+        }
+        $totalSales = (float) $sumQuery->sum('final_amount');
+        $totalProfit = (float) $sumQuery->sum('estimated_profit');
 
-        return view('sales.index', compact('transactions', 'search', 'startDate', 'endDate', 'status', 'totalSales', 'totalProfit'));
+        return view('sales.index', compact('transactions', 'search', 'startDate', 'endDate', 'status', 'totalSales', 'totalProfit', 'isGas'));
     }
 
     public function create(Request $request): View
     {
-        $rawItems = ScrapItem::with(['stockBalance', 'priceStocks', 'category'])
+        $user = Auth::user();
+        $isGas = $user && $user->isAdminGas();
+
+        $rawItemsQuery = ScrapItem::with(['stockBalance', 'priceStocks', 'category'])
             ->where('is_active', true)
             ->whereHas('stockBalance', function ($q) {
                 $q->where('current_stock', '>', 0);
-            })
-            ->orderBy('name')
-            ->get();
+            });
+
+        if ($isGas) {
+            $rawItemsQuery->where('item_type', 'gas');
+        }
+
+        $rawItems = $rawItemsQuery->orderBy('name')->get();
 
         $scrapItems = [];
         foreach ($rawItems as $item) {
@@ -90,7 +113,7 @@ class SalesTransactionController extends Controller
 
         $drivers = Driver::where('is_active', true)->orderBy('name')->get();
 
-        return view('sales.create', compact('scrapItems', 'paymentMethods', 'selectedDeliveryOrder', 'unbilledDeliveryOrders', 'drivers'));
+        return view('sales.create', compact('scrapItems', 'paymentMethods', 'selectedDeliveryOrder', 'unbilledDeliveryOrders', 'drivers', 'isGas'));
     }
 
     public function store(StoreSalesRequest $request): RedirectResponse
@@ -101,8 +124,11 @@ class SalesTransactionController extends Controller
                 Auth::user()
             );
 
+            $isGas = Auth::user() && Auth::user()->isAdminGas();
+            $label = $isGas ? 'Penjualan Gas' : 'Penjualan rongsok';
+
             return redirect()->route('sales.show', $transaction)
-                ->with('success', "Penjualan rongsok {$transaction->invoice_number} berhasil dicatat!");
+                ->with('success', "{$label} {$transaction->invoice_number} berhasil dicatat!");
         } catch (Exception $e) {
             \Illuminate\Support\Facades\Log::error('Sales store failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             return back()->withInput()->with('error', $e->getMessage());
@@ -281,7 +307,16 @@ class SalesTransactionController extends Controller
         $search = $request->query('search');
         $status = $request->query('status', 'completed');
 
+        $user = Auth::user();
+        $isGas = $user && $user->isAdminGas();
+
         $transactions = SalesTransaction::with(['items.scrapItem'])
+            ->when($isGas, function ($q) use ($user) {
+                $q->where(function ($sub) use ($user) {
+                    $sub->where('user_id', $user->id)
+                        ->orWhereHas('items.scrapItem', fn($sq) => $sq->where('item_type', 'gas'));
+                });
+            })
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('invoice_number', 'LIKE', "%{$search}%")
@@ -299,11 +334,11 @@ class SalesTransactionController extends Controller
         $totalProfit = (float) $transactions->sum('estimated_profit');
         $settings = BusinessSetting::pluck('value', 'key')->all();
 
-        $pdf = Pdf::loadView('sales.batch_pdf', compact('transactions', 'settings', 'startDate', 'endDate', 'totalWeight', 'totalSales', 'totalProfit'))
+        $pdf = Pdf::loadView('sales.batch_pdf', compact('transactions', 'settings', 'startDate', 'endDate', 'totalWeight', 'totalSales', 'totalProfit', 'isGas'))
             ->setPaper('a4', 'portrait');
 
         $dateSuffix = ($startDate && $endDate) ? "{$startDate}_sd_{$endDate}" : date('Ymd_His');
-        $filename = "Rekap_Penjualan_Partai_{$dateSuffix}.pdf";
+        $filename = ($isGas ? "Rekap_Penjualan_Gas_{$dateSuffix}.pdf" : "Rekap_Penjualan_Partai_{$dateSuffix}.pdf");
 
         if ($request->boolean('download')) {
             return $pdf->download($filename);

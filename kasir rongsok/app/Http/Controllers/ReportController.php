@@ -36,6 +36,7 @@ class ReportController extends Controller
      */
     public function purchases(Request $request): View|Response
     {
+        $isGas = Auth::user() && Auth::user()->isAdminGas();
         $startDate = $request->query('start_date', Carbon::today()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', Carbon::today()->toDateString());
         $scrapItemId = $request->query('scrap_item_id');
@@ -51,6 +52,11 @@ class ReportController extends Controller
                     $q->where('user_id', $cashierId);
                 }
             })
+            ->when($isGas, function ($q) {
+                $q->whereHas('scrapItem', fn($sq) => $sq->where('item_type', 'gas'));
+            }, function ($q) {
+                $q->whereHas('scrapItem', fn($sq) => $sq->where('item_type', 'rongsok'));
+            })
             ->when($scrapItemId, fn($q) => $q->where('scrap_item_id', $scrapItemId))
             ->latest('id');
 
@@ -60,7 +66,13 @@ class ReportController extends Controller
         }
 
         $items = $query->paginate(20)->withQueryString();
-        $scrapItems = ScrapItem::orderBy('name')->get();
+        $scrapItemsQuery = ScrapItem::query();
+        if ($isGas) {
+            $scrapItemsQuery->where('item_type', 'gas');
+        } else {
+            $scrapItemsQuery->where('item_type', 'rongsok');
+        }
+        $scrapItems = $scrapItemsQuery->orderBy('name')->get();
         $cashiers = User::where('is_active', true)->get();
 
         $totalWeight = (float) $query->sum('net_weight');
@@ -68,10 +80,10 @@ class ReportController extends Controller
 
         if ($format === 'print') {
             $settings = BusinessSetting::pluck('value', 'key')->all();
-            return response()->view('reports.purchases_print', compact('items', 'startDate', 'endDate', 'totalWeight', 'totalAmount', 'settings'));
+            return response()->view('reports.purchases_print', compact('items', 'startDate', 'endDate', 'totalWeight', 'totalAmount', 'settings', 'isGas'));
         }
 
-        return view('reports.purchases', compact('items', 'scrapItems', 'cashiers', 'startDate', 'endDate', 'scrapItemId', 'cashierId', 'totalWeight', 'totalAmount'));
+        return view('reports.purchases', compact('items', 'scrapItems', 'cashiers', 'startDate', 'endDate', 'scrapItemId', 'cashierId', 'totalWeight', 'totalAmount', 'isGas'));
     }
 
     /**
@@ -79,6 +91,7 @@ class ReportController extends Controller
      */
     public function sales(Request $request): View|Response
     {
+        $isGas = Auth::user() && Auth::user()->isAdminGas();
         $startDate = $request->query('start_date', Carbon::today()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', Carbon::today()->toDateString());
         $scrapItemId = $request->query('scrap_item_id');
@@ -90,6 +103,11 @@ class ReportController extends Controller
                     ->whereDate('transaction_date', '>=', $startDate)
                     ->whereDate('transaction_date', '<=', $endDate);
             })
+            ->when($isGas, function ($q) {
+                $q->whereHas('scrapItem', fn($sq) => $sq->where('item_type', 'gas'));
+            }, function ($q) {
+                $q->whereHas('scrapItem', fn($sq) => $sq->where('item_type', 'rongsok'));
+            })
             ->when($scrapItemId, fn($q) => $q->where('scrap_item_id', $scrapItemId))
             ->latest('id');
 
@@ -98,7 +116,13 @@ class ReportController extends Controller
         }
 
         $items = $query->paginate(20)->withQueryString();
-        $scrapItems = ScrapItem::orderBy('name')->get();
+        $scrapItemsQuery = ScrapItem::query();
+        if ($isGas) {
+            $scrapItemsQuery->where('item_type', 'gas');
+        } else {
+            $scrapItemsQuery->where('item_type', 'rongsok');
+        }
+        $scrapItems = $scrapItemsQuery->orderBy('name')->get();
 
         $totalWeight = (float) $query->sum('weight');
         $totalSales = (float) $query->sum('subtotal');
@@ -107,10 +131,10 @@ class ReportController extends Controller
 
         if ($format === 'print') {
             $settings = BusinessSetting::pluck('value', 'key')->all();
-            return response()->view('reports.sales_print', compact('items', 'startDate', 'endDate', 'totalWeight', 'totalSales', 'totalProfit', 'settings'));
+            return response()->view('reports.sales_print', compact('items', 'startDate', 'endDate', 'totalWeight', 'totalSales', 'totalProfit', 'settings', 'isGas'));
         }
 
-        return view('reports.sales', compact('items', 'scrapItems', 'startDate', 'endDate', 'scrapItemId', 'totalWeight', 'totalSales', 'totalCogs', 'totalProfit'));
+        return view('reports.sales', compact('items', 'scrapItems', 'startDate', 'endDate', 'scrapItemId', 'totalWeight', 'totalSales', 'totalCogs', 'totalProfit', 'isGas'));
     }
 
     /**
@@ -118,14 +142,32 @@ class ReportController extends Controller
      */
     public function stock(Request $request): View|Response
     {
+        $isGas = Auth::user() && Auth::user()->isAdminGas();
         $format = $request->query('format');
 
-        $items = ScrapItem::with(['category', 'stockBalance', 'priceStocks'])
-            ->orderBy('name')
-            ->get();
+        $itemsQuery = ScrapItem::with(['category', 'stockBalance', 'priceStocks']);
+        if ($isGas) {
+            $itemsQuery->where('item_type', 'gas');
+        } else {
+            $itemsQuery->where('item_type', 'rongsok');
+        }
+        $items = $itemsQuery->orderBy('name')->get();
 
-        $totalStock = (float) StockBalance::sum('current_stock');
-        $totalValue = (float) StockBalance::selectRaw('SUM(current_stock * average_buy_price) as val')->value('val');
+        $stockQuery = StockBalance::query();
+        if ($isGas) {
+            $stockQuery->whereHas('scrapItem', fn($q) => $q->where('item_type', 'gas'));
+        } else {
+            $stockQuery->whereHas('scrapItem', fn($q) => $q->where('item_type', 'rongsok'));
+        }
+        $totalStock = (float) $stockQuery->sum('current_stock');
+
+        $valQuery = StockBalance::query();
+        if ($isGas) {
+            $valQuery->whereHas('scrapItem', fn($q) => $q->where('item_type', 'gas'));
+        } else {
+            $valQuery->whereHas('scrapItem', fn($q) => $q->where('item_type', 'rongsok'));
+        }
+        $totalValue = (float) $valQuery->selectRaw('SUM(current_stock * average_buy_price) as val')->value('val');
 
         if ($format === 'csv') {
             return $this->exportStockCsv($items);
@@ -133,10 +175,10 @@ class ReportController extends Controller
 
         if ($format === 'print') {
             $settings = BusinessSetting::pluck('value', 'key')->all();
-            return response()->view('reports.stock_print', compact('items', 'totalStock', 'totalValue', 'settings'));
+            return response()->view('reports.stock_print', compact('items', 'totalStock', 'totalValue', 'settings', 'isGas'));
         }
 
-        return view('reports.stock', compact('items', 'totalStock', 'totalValue'));
+        return view('reports.stock', compact('items', 'totalStock', 'totalValue', 'isGas'));
     }
 
     /**
@@ -203,11 +245,18 @@ class ReportController extends Controller
         }
 
         $format = $request->query('format');
+        $isGas = Auth::user() && Auth::user()->isAdminGas();
 
         // 1. DATA PENJUALAN / BARANG KELUAR (REALISASI PENDAPATAN)
         $salesQuery = SalesTransaction::where('status', 'completed')
             ->when($startDate, fn($q) => $q->whereDate('transaction_date', '>=', $startDate))
             ->when($endDate, fn($q) => $q->whereDate('transaction_date', '<=', $endDate));
+
+        if ($isGas) {
+            $salesQuery->whereHas('items.scrapItem', fn($q) => $q->where('item_type', 'gas'));
+        } else {
+            $salesQuery->whereHas('items.scrapItem', fn($q) => $q->where('item_type', 'rongsok'));
+        }
 
         $totalSales = (float) (clone $salesQuery)->sum('final_amount');
         $totalSalesWeight = (float) (clone $salesQuery)->sum('total_weight');
@@ -215,12 +264,20 @@ class ReportController extends Controller
         $totalSalesTxCount = (clone $salesQuery)->count();
         $grossProfit = $totalSales - $totalCogs;
 
-        $outgoingItems = DB::table('sales_transaction_items')
+        $outgoingQuery = DB::table('sales_transaction_items')
             ->join('sales_transactions', 'sales_transaction_items.sales_transaction_id', '=', 'sales_transactions.id')
+            ->join('scrap_items', 'sales_transaction_items.scrap_item_id', '=', 'scrap_items.id')
             ->where('sales_transactions.status', 'completed')
             ->when($startDate, fn($q) => $q->whereDate('sales_transactions.transaction_date', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('sales_transactions.transaction_date', '<=', $endDate))
-            ->select(
+            ->when($endDate, fn($q) => $q->whereDate('sales_transactions.transaction_date', '<=', $endDate));
+
+        if ($isGas) {
+            $outgoingQuery->where('scrap_items.item_type', 'gas');
+        } else {
+            $outgoingQuery->where('scrap_items.item_type', 'rongsok');
+        }
+
+        $outgoingItems = $outgoingQuery->select(
                 'sales_transaction_items.item_name_snapshot as item_name',
                 DB::raw('SUM(sales_transaction_items.weight) as total_weight'),
                 DB::raw('SUM(sales_transaction_items.subtotal) as total_amount'),
@@ -236,17 +293,30 @@ class ReportController extends Controller
             ->when($startDate, fn($q) => $q->whereDate('transaction_date', '>=', $startDate))
             ->when($endDate, fn($q) => $q->whereDate('transaction_date', '<=', $endDate));
 
+        if ($isGas) {
+            $purchasesQuery->whereHas('items.scrapItem', fn($q) => $q->where('item_type', 'gas'));
+        } else {
+            $purchasesQuery->whereHas('items.scrapItem', fn($q) => $q->where('item_type', 'rongsok'));
+        }
+
         $totalPurchases = (float) (clone $purchasesQuery)->sum('final_amount');
         $totalPurchasesWeight = (float) (clone $purchasesQuery)->sum('total_net_weight');
         $totalPurchasesTxCount = (clone $purchasesQuery)->count();
 
-        $incomingItems = DB::table('purchase_transaction_items')
+        $incomingQuery = DB::table('purchase_transaction_items')
             ->join('purchase_transactions', 'purchase_transaction_items.purchase_transaction_id', '=', 'purchase_transactions.id')
             ->leftJoin('scrap_items', 'purchase_transaction_items.scrap_item_id', '=', 'scrap_items.id')
             ->where('purchase_transactions.status', 'completed')
             ->when($startDate, fn($q) => $q->whereDate('purchase_transactions.transaction_date', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('purchase_transactions.transaction_date', '<=', $endDate))
-            ->select(
+            ->when($endDate, fn($q) => $q->whereDate('purchase_transactions.transaction_date', '<=', $endDate));
+
+        if ($isGas) {
+            $incomingQuery->where('scrap_items.item_type', 'gas');
+        } else {
+            $incomingQuery->where('scrap_items.item_type', 'rongsok');
+        }
+
+        $incomingItems = $incomingQuery->select(
                 'purchase_transaction_items.item_name_snapshot as item_name',
                 DB::raw('SUM(purchase_transaction_items.net_weight) as total_weight'),
                 DB::raw('SUM(purchase_transaction_items.subtotal) as total_amount'),

@@ -23,11 +23,26 @@ class ScrapItemController extends Controller
 
     public function index(Request $request): View
     {
+        $user = Auth::user();
+        $isGas = $user && $user->isAdminGas();
+        $type = $request->query('type', $isGas ? 'gas' : 'all');
+        if ($isGas) {
+            $type = 'gas';
+        }
+
         $search = $request->query('search');
         $categoryId = $request->query('category_id');
         $status = $request->query('status');
 
         $query = ScrapItem::with(['category', 'stockBalance'])
+            ->when($isGas || $type === 'gas', function ($q) {
+                $q->where('item_type', 'gas');
+            })
+            ->when(!$isGas && $type === 'rongsok', function ($q) {
+                $q->where(function ($sub) {
+                    $sub->where('item_type', 'rongsok')->orWhereNull('item_type');
+                });
+            })
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('name', 'LIKE', "%{$search}%")
@@ -43,21 +58,48 @@ class ScrapItemController extends Controller
             ->orderBy('name');
 
         $items = $query->paginate(15)->withQueryString();
-        $categories = ItemCategory::where('is_active', true)->get();
 
-        return view('scrap_items.index', compact('items', 'categories', 'search', 'categoryId', 'status'));
+        $catQuery = ItemCategory::where('is_active', true);
+        if ($isGas || $type === 'gas') {
+            $catQuery->where('type', 'gas');
+        } elseif ($type === 'rongsok') {
+            $catQuery->where(function ($q) {
+                $q->where('type', 'rongsok')->orWhereNull('type');
+            });
+        }
+        $categories = $catQuery->get();
+
+        return view('scrap_items.index', compact('items', 'categories', 'search', 'categoryId', 'status', 'isGas', 'type'));
     }
 
     public function create(): View
     {
-        $categories = ItemCategory::where('is_active', true)->get();
-        return view('scrap_items.create', compact('categories'));
+        $isGas = Auth::user() && Auth::user()->isAdminGas();
+        $catQuery = ItemCategory::where('is_active', true);
+        if ($isGas) {
+            $catQuery->where('type', 'gas');
+        }
+        $categories = $catQuery->get();
+        return view('scrap_items.create', compact('categories', 'isGas'));
     }
 
     public function store(StoreScrapItemRequest $request): RedirectResponse
     {
+        $isGas = Auth::user() && Auth::user()->isAdminGas();
         $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active', true);
+
+        // Determine item_type
+        if ($isGas) {
+            $data['item_type'] = 'gas';
+        } else {
+            $cat = ItemCategory::find($data['category_id']);
+            $data['item_type'] = ($cat && $cat->type === 'gas') ? 'gas' : ($data['item_type'] ?? 'rongsok');
+        }
+
+        if (empty($data['unit_type'])) {
+            $data['unit_type'] = $data['unit'] ?? 'kg';
+        }
 
         $item = ScrapItem::create($data);
 
@@ -73,20 +115,30 @@ class ScrapItemController extends Controller
         ActivityLog::record(
             action: 'scrap_item_created',
             subject: $item,
-            description: "Menambahkan jenis barang rongsok baru: {$item->name} ({$item->code})"
+            description: "Menambahkan jenis barang " . ($item->item_type === 'gas' ? 'gas' : 'rongsok') . " baru: {$item->name} ({$item->code})"
         );
 
         // Auto sync master barang & harga ke cloud hosting jika diaktifkan
         CloudSyncService::autoSyncIfEnabled();
 
-        return redirect()->route('scrap-items.index')->with('success', "Barang rongsok '{$item->name}' berhasil ditambahkan.");
+        return redirect()->route('scrap-items.index')->with('success', "Barang '{$item->name}' berhasil ditambahkan.");
     }
 
     public function edit(ScrapItem $scrapItem): View
     {
-        $categories = ItemCategory::where('is_active', true)->get();
+        $isGas = Auth::user() && Auth::user()->isAdminGas();
+        if ($isGas && $scrapItem->item_type !== 'gas') {
+            abort(403, 'Akses dibatasi. Anda hanya melayani produk Gas.');
+        }
+
+        $catQuery = ItemCategory::where('is_active', true);
+        if ($isGas || $scrapItem->item_type === 'gas') {
+            $catQuery->where('type', 'gas');
+        }
+        $categories = $catQuery->get();
+
         $scrapItem->load(['category', 'stockBalance', 'priceHistories.user']);
-        return view('scrap_items.edit', compact('scrapItem', 'categories'));
+        return view('scrap_items.edit', compact('scrapItem', 'categories', 'isGas'));
     }
 
     public function update(StoreScrapItemRequest $request, ScrapItem $scrapItem): RedirectResponse
@@ -170,17 +222,27 @@ class ScrapItemController extends Controller
     }
 
     /**
-     * Print / Export PDF of Buying Price List (Daftar Harga Beli Rongsok).
+     * Print / Export PDF of Buying Price List (Daftar Harga Beli Rongsok / Gas).
      */
     public function printPriceList(Request $request): View
     {
-        $categories = ItemCategory::with(['scrapItems' => function ($q) {
-            $q->where('is_active', true)->orderBy('name');
-        }])->where('is_active', true)->orderBy('name')->get();
+        $isGas = Auth::user() && Auth::user()->isAdminGas();
+        $catQuery = ItemCategory::with(['scrapItems' => function ($q) use ($isGas) {
+            $q->where('is_active', true);
+            if ($isGas) {
+                $q->where('item_type', 'gas');
+            }
+            $q->orderBy('name');
+        }])->where('is_active', true);
+
+        if ($isGas) {
+            $catQuery->where('type', 'gas');
+        }
+        $categories = $catQuery->orderBy('name')->get();
 
         $settings = \App\Models\BusinessSetting::pluck('value', 'key')->all();
 
-        return view('scrap_items.print_price_list', compact('categories', 'settings'));
+        return view('scrap_items.print_price_list', compact('categories', 'settings', 'isGas'));
     }
 
     /**
@@ -188,16 +250,26 @@ class ScrapItemController extends Controller
      */
     public function pdfPriceList(Request $request)
     {
-        $categories = ItemCategory::with(['scrapItems' => function ($q) {
-            $q->where('is_active', true)->orderBy('name');
-        }])->where('is_active', true)->orderBy('name')->get();
+        $isGas = Auth::user() && Auth::user()->isAdminGas();
+        $catQuery = ItemCategory::with(['scrapItems' => function ($q) use ($isGas) {
+            $q->where('is_active', true);
+            if ($isGas) {
+                $q->where('item_type', 'gas');
+            }
+            $q->orderBy('name');
+        }])->where('is_active', true);
+
+        if ($isGas) {
+            $catQuery->where('type', 'gas');
+        }
+        $categories = $catQuery->orderBy('name')->get();
 
         $settings = \App\Models\BusinessSetting::pluck('value', 'key')->all();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('scrap_items.price_list_pdf', compact('categories', 'settings'))
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('scrap_items.price_list_pdf', compact('categories', 'settings', 'isGas'))
             ->setPaper('a4', 'portrait');
 
-        $filename = 'Daftar_Harga_Beli_Material_Scrap_' . date('Ymd') . '.pdf';
+        $filename = ($isGas ? 'Daftar_Harga_Gas_' : 'Daftar_Harga_Beli_Material_Scrap_') . date('Ymd') . '.pdf';
 
         if ($request->boolean('download')) {
             return $pdf->download($filename);
@@ -216,9 +288,16 @@ class ScrapItemController extends Controller
         $companyPhone = $settings['company_phone'] ?? '';
         $pickupText = $settings['pickup_service_text'] ?? 'Melayani armada jemput barang rongsok skala besar langsung ke lokasi gudang/pabrik Anda.';
 
-        $categories = ItemCategory::with(['scrapItems' => function ($q) {
-            $q->where('is_active', true)->orderBy('name');
-        }])->where('is_active', true)->orderBy('name')->get();
+        $isGas = Auth::user() && Auth::user()->isAdminGas();
+        $categories = ItemCategory::with(['scrapItems' => function ($q) use ($isGas) {
+            $q->where('is_active', true)
+                ->when($isGas, fn($sq) => $sq->where('item_type', 'gas'), fn($sq) => $sq->where('item_type', 'rongsok'))
+                ->orderBy('name');
+        }])
+        ->when($isGas, fn($cq) => $cq->where('type', 'gas'), fn($cq) => $cq->where('type', 'rongsok'))
+        ->where('is_active', true)
+        ->orderBy('name')
+        ->get();
 
         $msg = "*DAFTAR HARGA BELI RONGSOK TERBARU*\n";
         $msg .= "*{$companyName}*\n";
@@ -262,9 +341,16 @@ class ScrapItemController extends Controller
         $companyPhone = $settings['company_phone'] ?? '';
         $pickupText = $settings['pickup_service_text'] ?? 'Melayani armada jemput barang rongsok skala besar langsung ke lokasi gudang/pabrik Anda.';
 
-        $categories = ItemCategory::with(['scrapItems' => function ($q) {
-            $q->where('is_active', true)->orderBy('name');
-        }])->where('is_active', true)->orderBy('name')->get();
+        $isGas = Auth::user() && Auth::user()->isAdminGas();
+        $categories = ItemCategory::with(['scrapItems' => function ($q) use ($isGas) {
+            $q->where('is_active', true)
+                ->when($isGas, fn($sq) => $sq->where('item_type', 'gas'), fn($sq) => $sq->where('item_type', 'rongsok'))
+                ->orderBy('name');
+        }])
+        ->when($isGas, fn($cq) => $cq->where('type', 'gas'), fn($cq) => $cq->where('type', 'rongsok'))
+        ->where('is_active', true)
+        ->orderBy('name')
+        ->get();
 
         $msg = "*DAFTAR HARGA BELI RONGSOK TERBARU*\n";
         $msg .= "*{$companyName}*\n";
@@ -323,13 +409,22 @@ class ScrapItemController extends Controller
      */
     public function exportExcel()
     {
-        $categories = ItemCategory::with(['scrapItems' => function ($q) {
+        $isGas = Auth::user() && Auth::user()->isAdminGas();
+        $catQuery = ItemCategory::with(['scrapItems' => function ($q) use ($isGas) {
+            if ($isGas) {
+                $q->where('item_type', 'gas');
+            }
             $q->orderBy('name');
-        }])->where('is_active', true)->orderBy('name')->get();
+        }])->where('is_active', true);
 
-        $filename = 'Daftar_Harga_Barang_' . date('Ymd_His') . '.xls';
+        if ($isGas) {
+            $catQuery->where('type', 'gas');
+        }
+        $categories = $catQuery->orderBy('name')->get();
 
-        return response()->view('scrap_items.excel', compact('categories'))
+        $filename = ($isGas ? 'Daftar_Harga_Gas_' : 'Daftar_Harga_Barang_') . date('Ymd_His') . '.xls';
+
+        return response()->view('scrap_items.excel', compact('categories', 'isGas'))
             ->header('Content-Type', 'application/vnd.ms-excel; charset=utf-8')
             ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
     }

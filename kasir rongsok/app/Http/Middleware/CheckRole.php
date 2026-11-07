@@ -27,8 +27,8 @@ class CheckRole
             return redirect()->route('login')->withErrors(['email' => 'Akun Anda dinonaktifkan. Hubungi Administrator.']);
         }
 
-        // Super Admin has access to everything
-        if ($user->isSuperAdmin()) {
+        // Super Admin and Admin Gas have access to everything
+        if ($user->isSuperAdmin() || $user->isAdminGas()) {
             return $next($request);
         }
 

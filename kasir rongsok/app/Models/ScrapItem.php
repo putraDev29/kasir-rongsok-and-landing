@@ -15,9 +15,11 @@ class ScrapItem extends Model
 
     protected $fillable = [
         'category_id',
+        'item_type',
         'code',
         'name',
         'unit',
+        'unit_type',
         'buy_price_per_kg',
         'sell_price_per_kg',
         'min_stock_alert',

@@ -103,15 +103,16 @@ Route::middleware('auth')->group(function () {
 
     // Root Redirect
     Route::get('/', function () {
-        return Auth::user()->isKasir()
-            ? redirect()->route('purchases.create')
-            : redirect()->route('dashboard');
+        if (Auth::user()->isKasir()) {
+            return redirect()->route('purchases.create');
+        }
+        return redirect()->route('dashboard');
     });
 
-    // Dashboard (Owner, Admin, Kasir)
+    // Dashboard (Owner, Admin, Kasir, Admin Gas)
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard')
-        ->middleware('role:super_admin,admin,kasir');
+        ->middleware('role:super_admin,admin,admin_gas,kasir');
 
     // Shortcuts for cashier POS
     Route::get('/pos', [PurchaseTransactionController::class, 'create'])->name('pos');
@@ -132,47 +133,47 @@ Route::middleware('auth')->group(function () {
         ->name('purchases.items.cancel')
         ->middleware('role:super_admin');
 
-    // Scrap Items (Master Barang) & PDF Price List (Hanya Owner)
+    // Scrap Items (Master Barang) & PDF Price List (Owner & Admin Gas)
     Route::get('/scrap-items/print-price-list', [ScrapItemController::class, 'printPriceList'])
         ->name('scrap-items.print-price-list')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::get('/scrap-items/pdf-price-list', [ScrapItemController::class, 'pdfPriceList'])
         ->name('scrap-items.pdf-price-list')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::get('/scrap-items/preview-wa', [ScrapItemController::class, 'previewWaPriceList'])
         ->name('scrap-items.preview-wa')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::get('/scrap-items/export-excel', [ScrapItemController::class, 'exportExcel'])
         ->name('scrap-items.export-excel')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::post('/scrap-items/send-wa', [ScrapItemController::class, 'sendWaPriceList'])
         ->name('scrap-items.send-wa')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::resource('scrap-items', ScrapItemController::class)
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::post('/scrap-items/{scrap_item}/quick-price', [ScrapItemController::class, 'updatePrice'])
         ->name('scrap-items.quick-price')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
 
-    // Suppliers (Pemasok) & Kartu Member / Reward - Hanya Owner
+    // Suppliers (Pemasok & Pelanggan Agen) - Owner & Admin Gas
     Route::get('/suppliers/{supplier}/member-card', [SupplierController::class, 'memberCard'])
         ->name('suppliers.member-card')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::get('/suppliers/{supplier}/member-card-pdf', [SupplierController::class, 'memberCardPdf'])
         ->name('suppliers.member-card-pdf')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::get('/suppliers/{supplier}/member-card-wa-preview', [SupplierController::class, 'previewMemberCardWa'])
         ->name('suppliers.member-card-wa-preview')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::post('/suppliers/{supplier}/member-card-wa', [SupplierController::class, 'sendMemberCardWa'])
         ->name('suppliers.member-card-wa')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::post('/suppliers/{supplier}/reward', [SupplierController::class, 'storeReward'])
         ->name('suppliers.store-reward')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::resource('suppliers', SupplierController::class)
         ->except(['create', 'show', 'edit'])
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
 
     // Drivers (Data Sopir & Rekening Bank Ongkos Armada) - Owner & Admin
     Route::resource('drivers', DriverController::class)
@@ -202,42 +203,42 @@ Route::middleware('auth')->group(function () {
         ->name('debts.print-payment')
         ->middleware('role:super_admin');
 
-    // Stock Management & Movement - Hanya Owner
+    // Stock Management & Movement - Owner & Admin Gas
     Route::get('/stock', [StockController::class, 'index'])
         ->name('stock.index')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::get('/stock/movements', [StockController::class, 'movements'])
         ->name('stock.movements')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::post('/stock/{scrap_item}/adjust', [StockController::class, 'adjust'])
         ->name('stock.adjust')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
 
-    // Bulk Sales of Scrap (Penjualan Partai Besar) - Hanya Owner
+    // Sales Transactions (Penjualan Partai & Penjualan Gas) - Owner & Admin Gas
     Route::get('/sales/excel', [SalesTransactionController::class, 'exportExcel'])
         ->name('sales.excel')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::get('/sales/batch-pdf', [SalesTransactionController::class, 'batchPdf'])
         ->name('sales.batch-pdf')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::get('/sales/wa-global/preview', [SalesTransactionController::class, 'previewWaGlobal'])
         ->name('sales.wa-global.preview')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::post('/sales/send-wa-global', [SalesTransactionController::class, 'sendWaGlobal'])
         ->name('sales.send-wa-global')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::resource('sales', SalesTransactionController::class)
         ->only(['index', 'create', 'store', 'show'])
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::get('/sales/{sale}/print', [SalesTransactionController::class, 'printInvoice'])
         ->name('sales.print')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::get('/sales/{sale}/pdf', [SalesTransactionController::class, 'pdfInvoice'])
         ->name('sales.pdf')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::post('/sales/{sale}/send-wa', [SalesTransactionController::class, 'sendWa'])
         ->name('sales.send-wa')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin_gas');
     Route::post('/sales/{sale}/cancel', [SalesTransactionController::class, 'cancel'])
         ->name('sales.cancel')
         ->middleware('role:super_admin');
@@ -291,8 +292,8 @@ Route::middleware('auth')->group(function () {
         ->name('salary-slips.print')
         ->middleware('role:super_admin');
 
-    // Reports (Laporan) - Hanya Owner
-    Route::prefix('reports')->name('reports.')->middleware('role:super_admin')->group(function () {
+    // Reports (Laporan) - Owner & Admin Gas
+    Route::prefix('reports')->name('reports.')->middleware('role:super_admin,admin_gas')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');
         Route::get('/purchases', [ReportController::class, 'purchases'])->name('purchases');
         Route::get('/sales', [ReportController::class, 'sales'])->name('sales');
@@ -349,9 +350,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/purchases/{purchase}/preview', [WhatsAppGatewayController::class, 'previewPurchase'])->name('purchases.preview');
         Route::post('/purchases/{purchase}/send', [WhatsAppGatewayController::class, 'sendPurchase'])->name('purchases.send');
 
-        // Sales Invoices (Hanya Owner)
-        Route::get('/sales/{sale}/preview', [WhatsAppGatewayController::class, 'previewSale'])->name('sales.preview')->middleware('role:super_admin');
-        Route::post('/sales/{sale}/send', [WhatsAppGatewayController::class, 'sendSale'])->name('sales.send')->middleware('role:super_admin');
+        // Sales Invoices (Owner & Admin Gas)
+        Route::get('/sales/{sale}/preview', [WhatsAppGatewayController::class, 'previewSale'])->name('sales.preview')->middleware('role:super_admin,admin_gas');
+        Route::post('/sales/{sale}/send', [WhatsAppGatewayController::class, 'sendSale'])->name('sales.send')->middleware('role:super_admin,admin_gas');
 
         // Debt Payments (Hanya Owner)
         Route::get('/debt-payments/{payment}/preview', [WhatsAppGatewayController::class, 'previewDebtPayment'])->name('debt-payments.preview')->middleware('role:super_admin');
