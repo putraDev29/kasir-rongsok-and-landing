@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { CategoryItem, LandingSettings, ScrapPriceItem } from "@/types/landing-page";
 import { formatRupiah } from "@/lib/utils";
+import { formatWhatsAppNumber } from "@/lib/api";
 
 interface CategoriesSectionProps {
   categories: CategoryItem[];
@@ -99,7 +100,7 @@ export default function CategoriesSection({ categories, settings }: CategoriesSe
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.5 }}
@@ -294,7 +295,9 @@ export default function CategoriesSection({ categories, settings }: CategoriesSe
                                 </div>
 
                                 <a
-                                  href={`https://wa.me/${settings.whatsapp_number}?text=${encodeURIComponent(
+                                  href={`https://wa.me/${formatWhatsAppNumber(
+                                    settings.whatsapp_number || settings.whatsapp_raw
+                                  )}?text=${encodeURIComponent(
                                     `Halo Admin PT. Seberaya Akses Multi, saya ingin menjual/tanya harga material: ${item.name} (${category.name}). Mohon info penimbangannya.`
                                   )}`}
                                   target="_blank"

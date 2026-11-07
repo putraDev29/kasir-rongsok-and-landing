@@ -83,17 +83,12 @@ export default async function RootLayout({
   };
 
   return (
-    <html lang="id" className="scroll-smooth">
-      <head>
-        <link rel="icon" href="/icon.png" sizes="any" />
-        <link rel="shortcut icon" href="/icon.png" />
-        <link rel="apple-touch-icon" href="/icon.png" />
+    <html lang="id" className="scroll-smooth" suppressHydrationWarning>
+      <body className="bg-white text-slate-800 antialiased selection:bg-emerald-500 selection:text-white" suppressHydrationWarning>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-      </head>
-      <body className="bg-white text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
         {children}
       </body>
     </html>

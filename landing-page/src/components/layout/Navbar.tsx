@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, PhoneCall, Recycle, MessageCircle } from "lucide-react";
 import Image from "next/image";
 import { LandingSettings } from "@/types/landing-page";
+import { resolveImageUrl } from "@/lib/api";
 
 interface NavbarProps {
   settings: LandingSettings;
@@ -25,6 +26,10 @@ const NAV_LINKS = [
 export default function Navbar({ settings }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
+
+  const rawLogo = settings.logo_url && !settings.logo_url.includes("icon-default.svg") ? settings.logo_url : "./logo.png";
+  const logoSrc = imgError ? "./logo.png" : resolveImageUrl(rawLogo, "./logo.png");
 
   useEffect(() => {
     const handleScroll = () => {
@@ -60,28 +65,22 @@ export default function Navbar({ settings }: NavbarProps) {
             <a
               href="#hero"
               onClick={(e) => handleLinkClick(e, "#hero")}
-              className="flex items-center gap-3 group"
+              className="flex items-center gap-2.5 sm:gap-3 group min-w-0"
             >
-              <div className="relative w-12 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-sky-200 group-hover:scale-105 transition-transform overflow-hidden p-0.5">
-                {settings.logo_url && !settings.logo_url.includes("icon-default.svg") ? (
-                  <Image
-                    src={settings.logo_url}
-                    alt={settings.company_name}
-                    width={48}
-                    height={40}
-                    unoptimized
-                    className="object-contain w-full h-full"
-                  />
-                ) : (
-                  <Recycle className="w-5 h-5 text-sky-600" />
-                )}
+              <div className="relative w-10 h-8 sm:w-12 sm:h-10 rounded-xl bg-white flex items-center justify-center shadow-xs border border-sky-200 group-hover:scale-105 transition-transform overflow-hidden p-0.5 shrink-0">
+                <Image
+                  src={logoSrc}
+                  alt={settings.company_name}
+                  width={48}
+                  height={40}
+                  unoptimized
+                  onError={() => setImgError(true)}
+                  className="object-contain w-full h-full"
+                />
               </div>
-              <div className="flex flex-col">
-                <span className="font-black text-sm sm:text-base tracking-tight text-slate-900 uppercase group-hover:text-sky-600 transition-colors">
+              <div className="flex flex-col min-w-0 max-w-[180px] xs:max-w-[220px] sm:max-w-xs md:max-w-sm lg:max-w-md">
+                <span className="font-black text-xs sm:text-base tracking-tight text-slate-900 uppercase group-hover:text-sky-600 transition-colors truncate">
                   {settings.company_name}
-                </span>
-                <span className="text-[10px] text-sky-600 font-bold tracking-wider uppercase -mt-0.5">
-                  {settings.company_tagline || "Seberaya Logam • Scrap & Rongsok"}
                 </span>
               </div>
             </a>

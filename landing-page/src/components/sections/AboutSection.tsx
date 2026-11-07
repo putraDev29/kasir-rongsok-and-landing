@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { CheckCircle2, Target, Compass, Award, MessageCircle } from "lucide-react";
 import Image from "next/image";
 import { AboutData, LandingSettings } from "@/types/landing-page";
+import { resolveImageUrl } from "@/lib/api";
 
 interface AboutSectionProps {
   about: AboutData;
@@ -18,10 +19,11 @@ export default function AboutSection({ about, settings }: AboutSectionProps) {
     .map((line) => line.replace(/^[0-9]+\.\s*/, "").trim())
     .filter((line) => line.length > 0);
 
-  const aboutImage =
+  const rawAboutImage =
     about.image ||
     settings.about_image ||
-    "/images/about_depo_seberaya.jpg";
+    "./images/about_depo_seberaya.jpg";
+  const aboutImage = resolveImageUrl(rawAboutImage, "./images/about_depo_seberaya.jpg");
 
   return (
     <section id="about" className="py-20 relative bg-white border-t border-sky-100">
@@ -29,7 +31,7 @@ export default function AboutSection({ about, settings }: AboutSectionProps) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           {/* Left Column: Image with Experience Badge */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
+            initial={false}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.6 }}
@@ -40,7 +42,7 @@ export default function AboutSection({ about, settings }: AboutSectionProps) {
                 src={aboutImage}
                 alt="Operasional Depo Pengepul Rongsok PT. Seberaya Akses Multi"
                 fill
-                unoptimized={aboutImage.startsWith("http://localhost") || aboutImage.startsWith("http://127.0.0.1")}
+                unoptimized
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="(max-width: 1024px) 100vw, 500px"
               />
@@ -63,7 +65,7 @@ export default function AboutSection({ about, settings }: AboutSectionProps) {
 
           {/* Right Column: Text Story, Vision, Mission, CTA */}
           <motion.div
-            initial={{ opacity: 0, x: 30 }}
+            initial={false}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.6 }}

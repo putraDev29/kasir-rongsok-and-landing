@@ -21,7 +21,7 @@ import {
   User,
 } from "lucide-react";
 import { StoryItem, StoryComment, LandingSettings } from "@/types/landing-page";
-import { getApiBaseUrl } from "@/lib/api";
+import { getApiBaseUrl, resolveImageUrl, formatWhatsAppNumber } from "@/lib/api";
 
 interface HeroStoryViewerProps {
   initialStories?: StoryItem[];
@@ -261,16 +261,13 @@ export function HeroStoryViewer({
 
   // WhatsApp Question Link Generator
   const generateWhatsAppUrl = (customText?: string) => {
-    const rawNumber =
-      settings.whatsapp_raw ||
-      settings.whatsapp_number.replace(/[^0-9]/g, "") ||
-      "6281584234353";
+    const cleanNumber = formatWhatsAppNumber(settings.whatsapp_number || settings.whatsapp_raw);
     const title = currentStory.title || "Foto Story Depo";
     const textMsg = customText
       ? `Halo Admin PT. Seberaya Akses Multi,\n\nSaya ingin bertanya mengenai foto story: *"${title}"*.\n\n${customText}\n\nTerima kasih!`
       : `Halo Admin PT. Seberaya Akses Multi, saya melihat foto story: *"${title}"* di website dan ingin bertanya mengenai harga serta layanan jemput rongsok.`;
 
-    return `https://api.whatsapp.com/send?phone=${rawNumber}&text=${encodeURIComponent(textMsg)}`;
+    return `https://wa.me/${cleanNumber}?text=${encodeURIComponent(textMsg)}`;
   };
 
   // Comment Submission Handler
@@ -360,11 +357,12 @@ export function HeroStoryViewer({
     }
   };
 
-  const imageSrc =
+  const rawImage =
     currentStory.image_url ||
     currentStory.image_path ||
     fallbackImage ||
     "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format&fit=crop";
+  const imageSrc = resolveImageUrl(rawImage, "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format&fit=crop");
 
   return (
     <div
@@ -456,7 +454,7 @@ export function HeroStoryViewer({
         <motion.div
           key={currentStory.id || currentIndex}
           custom={direction}
-          initial={{ opacity: 0, scale: 1.03 }}
+          initial={false}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.98 }}
           transition={{ duration: 0.35, ease: "easeInOut" }}
@@ -467,7 +465,7 @@ export function HeroStoryViewer({
             alt={currentStory.title}
             fill
             priority
-            unoptimized={imageSrc.startsWith("http://localhost") || imageSrc.startsWith("http://127.0.0.1")}
+            unoptimized
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 60vw"
           />

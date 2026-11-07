@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Recycle, MapPin, Phone, Mail, Clock, MessageCircle } from "lucide-react";
 import Image from "next/image";
 import { LandingSettings, CategoryItem } from "@/types/landing-page";
+import { resolveImageUrl } from "@/lib/api";
 
 interface FooterProps {
   settings: LandingSettings;
@@ -12,6 +13,10 @@ interface FooterProps {
 
 export default function Footer({ settings, categories }: FooterProps) {
   const currentYear = new Date().getFullYear();
+  const [imgError, setImgError] = useState(false);
+
+  const rawLogo = settings.logo_url && !settings.logo_url.includes("icon-default.svg") ? settings.logo_url : "./logo.png";
+  const logoSrc = imgError ? "./logo.png" : resolveImageUrl(rawLogo, "./logo.png");
 
   return (
     <footer className="relative bg-slate-50 border-t border-sky-100 text-slate-600 pt-16 pb-12 overflow-hidden">
@@ -24,18 +29,15 @@ export default function Footer({ settings, categories }: FooterProps) {
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-sky-200 p-0.5 overflow-hidden">
-                {settings.logo_url && !settings.logo_url.includes("icon-default.svg") ? (
-                  <Image
-                    src={settings.logo_url}
-                    alt={settings.company_name}
-                    width={48}
-                    height={40}
-                    unoptimized
-                    className="object-contain w-full h-full"
-                  />
-                ) : (
-                  <Recycle className="w-5 h-5 text-sky-600" />
-                )}
+                <Image
+                  src={logoSrc}
+                  alt={settings.company_name}
+                  width={48}
+                  height={40}
+                  unoptimized
+                  onError={() => setImgError(true)}
+                  className="object-contain w-full h-full"
+                />
               </div>
               <div>
                 <span className="font-black text-base tracking-tight text-slate-900 uppercase block">

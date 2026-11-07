@@ -58,7 +58,7 @@ export default function ServicesSection({ services, settings }: ServicesSectionP
             return (
               <motion.div
                 key={srv.id}
-                initial={{ opacity: 0, y: 25 }}
+                initial={false}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.15 }}
                 transition={{ duration: 0.4, delay: idx * 0.08 }}

@@ -67,7 +67,7 @@ export default function StatisticsSection({ statistics }: StatisticsSectionProps
             return (
               <motion.div
                 key={stat.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={false}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}

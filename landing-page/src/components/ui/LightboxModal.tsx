@@ -87,6 +87,7 @@ export default function LightboxModal({
               src={current.url}
               alt={current.title}
               fill
+              unoptimized
               className="object-contain"
               sizes="(max-width: 1200px) 100vw, 1200px"
               priority

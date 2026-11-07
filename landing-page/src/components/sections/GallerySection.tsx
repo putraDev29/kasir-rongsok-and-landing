@@ -6,6 +6,7 @@ import { Maximize2 } from "lucide-react";
 import Image from "next/image";
 import { GalleryItem } from "@/types/landing-page";
 import LightboxModal from "@/components/ui/LightboxModal";
+import { resolveImageUrl } from "@/lib/api";
 
 interface GallerySectionProps {
   gallery: GalleryItem[];
@@ -29,7 +30,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
   };
 
   const lightboxImages = filteredGallery.map((g) => ({
-    url: g.image_url || g.image_path,
+    url: resolveImageUrl(g.image_url || g.image_path),
     title: g.title,
     category: g.category,
     caption: g.caption,
@@ -40,7 +41,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.5 }}
@@ -79,7 +80,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
           {filteredGallery.map((item, idx) => (
             <motion.div
               key={item.id}
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={false}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.4, delay: idx * 0.06 }}
@@ -87,9 +88,10 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
               className="group relative h-64 sm:h-72 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 cursor-pointer shadow-md hover:border-sky-400 transition-all hover:shadow-xl hover:shadow-sky-100/60"
             >
               <Image
-                src={item.image_url || item.image_path}
+                src={resolveImageUrl(item.image_url || item.image_path)}
                 alt={item.title}
                 fill
+                unoptimized
                 className="object-cover group-hover:scale-110 transition-transform duration-500"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />

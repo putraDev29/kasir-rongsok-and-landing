@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { LandingPageData } from "@/types/landing-page";
 import { getLandingPageData } from "@/services/landing-page.service";
+import { getApiBaseUrl } from "@/lib/api";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
@@ -29,17 +30,21 @@ export default function LandingPageClient({ initialData }: LandingPageClientProp
   // Live client-side data synchronization from API
   const refreshData = useCallback(async () => {
     try {
+      console.log("[Seberaya Live Sync] Fetching fresh data from API backend...");
       const fresh = await getLandingPageData();
       if (fresh && fresh.settings && fresh.settings.company_name) {
+        console.log(
+          `[Seberaya Live Sync] Synchronized successfully! Categories: ${fresh.categories?.length}, Stories: ${fresh.stories?.length}`
+        );
         setData(fresh);
       }
     } catch (err) {
-      // Graceful fallback: maintain current state
       console.warn("[Live Sync Warning] Keeping existing data due to connection:", err);
     }
   }, []);
 
   useEffect(() => {
+    console.log("[Seberaya Live Sync] Initialized. API target URL:", getApiBaseUrl());
     // 1. Fetch immediately on client mount
     refreshData();
 

@@ -101,7 +101,7 @@ export default function TestimonialsSection({ testimonials: initialTestimonials 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.5 }}
@@ -135,7 +135,7 @@ export default function TestimonialsSection({ testimonials: initialTestimonials 
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentIndex}
-                initial={{ opacity: 0, scale: 0.96 }}
+                initial={false}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.96 }}
                 transition={{ duration: 0.3 }}
@@ -163,6 +163,7 @@ export default function TestimonialsSection({ testimonials: initialTestimonials 
                         src={testimonials[currentIndex].avatar_url!}
                         alt={testimonials[currentIndex].client_name}
                         fill
+                        unoptimized
                         className="object-cover"
                       />
                     ) : (
@@ -225,7 +226,7 @@ export default function TestimonialsSection({ testimonials: initialTestimonials 
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
               {/* Backdrop */}
               <motion.div
-                initial={{ opacity: 0 }}
+                initial={false}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => !isSubmitting && setIsModalOpen(false)}
@@ -234,7 +235,7 @@ export default function TestimonialsSection({ testimonials: initialTestimonials 
 
               {/* Modal Box */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                initial={false}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 15 }}
                 transition={{ duration: 0.2 }}

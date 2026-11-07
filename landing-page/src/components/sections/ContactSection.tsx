@@ -72,7 +72,7 @@ export default function ContactSection({ settings }: ContactSectionProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.5 }}
@@ -92,7 +92,7 @@ export default function ContactSection({ settings }: ContactSectionProps) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           {/* Left Column: Direct Contact Info (5 cols) */}
           <motion.div
-            initial={{ opacity: 0, x: -25 }}
+            initial={false}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.5 }}
@@ -174,7 +174,7 @@ export default function ContactSection({ settings }: ContactSectionProps) {
 
           {/* Right Column: Inquiry Form (7 cols) */}
           <motion.div
-            initial={{ opacity: 0, x: 25 }}
+            initial={false}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.5 }}
