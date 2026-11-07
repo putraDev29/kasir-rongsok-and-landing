@@ -321,6 +321,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/services/{service}', [LandingPageAdminController::class, 'destroyService'])->name('services.destroy');
         Route::post('/gallery', [LandingPageAdminController::class, 'storeGallery'])->name('gallery.store');
         Route::delete('/gallery/{gallery}', [LandingPageAdminController::class, 'destroyGallery'])->name('gallery.destroy');
+        Route::post('/stories', [LandingPageAdminController::class, 'storeStory'])->name('stories.store');
+        Route::delete('/stories/{story}', [LandingPageAdminController::class, 'destroyStory'])->name('stories.destroy');
+        Route::delete('/stories/comments/{comment}', [LandingPageAdminController::class, 'destroyStoryComment'])->name('stories.comments.destroy');
         Route::post('/testimonials', [LandingPageAdminController::class, 'storeTestimonial'])->name('testimonials.store');
         Route::delete('/testimonials/{testimonial}', [LandingPageAdminController::class, 'destroyTestimonial'])->name('testimonials.destroy');
         Route::post('/faqs', [LandingPageAdminController::class, 'storeFaq'])->name('faqs.store');

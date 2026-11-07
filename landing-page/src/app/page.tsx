@@ -30,11 +30,12 @@ export default async function HomePage() {
 
       {/* Main Content Sections */}
       <main className="flex-1">
-        {/* A. Hero Section */}
+        {/* A. Hero Section (With Interactive Story Viewer) */}
         <HeroSection
           hero={data.hero}
           settings={data.settings}
           statistics={data.statistics}
+          stories={data.stories}
         />
 
         {/* B. About Us */}

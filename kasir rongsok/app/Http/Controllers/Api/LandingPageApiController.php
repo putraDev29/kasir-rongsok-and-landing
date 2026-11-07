@@ -10,8 +10,11 @@ use App\Models\LandingGallery;
 use App\Models\LandingInquiry;
 use App\Models\LandingService;
 use App\Models\LandingStatistic;
+use App\Models\LandingStory;
+use App\Models\LandingStoryComment;
 use App\Models\LandingTestimonial;
 use App\Models\ScrapItem;
+use App\Services\TranslationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -160,6 +163,7 @@ class LandingPageApiController extends Controller
                 'why_choose_us' => $whyChooseUs,
                 'process' => $processSteps,
                 'gallery' => $gallery,
+                'stories' => $this->getStoriesData(),
                 'statistics' => $statistics,
                 'location' => [
                     'company_name' => $settings['company_name'],
@@ -244,6 +248,113 @@ class LandingPageApiController extends Controller
         return response()->json([
             'success' => true,
             'data' => $galleries,
+        ], 200, ['Access-Control-Allow-Origin' => '*']);
+    }
+
+    /**
+     * Get Stories (Hero Story Reel) ordered newest first (id DESC)
+     */
+    public function stories(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $this->getStoriesData(),
+        ], 200, ['Access-Control-Allow-Origin' => '*']);
+    }
+
+    /**
+     * Store comment for a specific Story photo (auto-translates foreign languages to Indonesian)
+     */
+    public function storeStoryComment(Request $request, int $id): JsonResponse
+    {
+        $story = LandingStory::find($id);
+        if (!$story) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Story tidak ditemukan.',
+            ], 4404, ['Access-Control-Allow-Origin' => '*']);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'user_name' => 'required|string|max:100',
+            'comment' => 'required|string|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors(),
+            ], 422, ['Access-Control-Allow-Origin' => '*']);
+        }
+
+        $rawComment = trim($request->input('comment'));
+        $userName = trim($request->input('user_name'));
+
+        // Auto-translate to natural Indonesian
+        $translation = TranslationService::translateToIndonesian($rawComment);
+
+        $comment = LandingStoryComment::create([
+            'story_id' => $story->id,
+            'user_name' => $userName,
+            'comment' => $translation['translated_text'],
+            'original_comment' => $translation['original_text'],
+            'detected_language' => $translation['detected_language'],
+            'is_translated' => $translation['is_translated'],
+            'likes_count' => 0,
+            'is_approved' => true,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Komentar berhasil dikirim!',
+            'data' => [
+                'id' => $comment->id,
+                'story_id' => $comment->story_id,
+                'user_name' => $comment->user_name,
+                'comment' => $comment->comment,
+                'original_comment' => $comment->original_comment,
+                'detected_language' => $comment->detected_language,
+                'is_translated' => (bool) $comment->is_translated,
+                'likes_count' => $comment->likes_count,
+                'created_at' => 'Baru saja',
+            ],
+        ], 201, ['Access-Control-Allow-Origin' => '*']);
+    }
+
+    /**
+     * Like a Story Photo
+     */
+    public function likeStory(int $id): JsonResponse
+    {
+        $story = LandingStory::find($id);
+        if (!$story) {
+            return response()->json(['success' => false, 'message' => 'Story tidak ditemukan'], 404);
+        }
+
+        $story->increment('likes_count');
+
+        return response()->json([
+            'success' => true,
+            'likes_count' => $story->fresh()->likes_count,
+        ], 200, ['Access-Control-Allow-Origin' => '*']);
+    }
+
+    /**
+     * Like a Story Comment
+     */
+    public function likeStoryComment(int $id): JsonResponse
+    {
+        $comment = LandingStoryComment::find($id);
+        if (!$comment) {
+            return response()->json(['success' => false, 'message' => 'Komentar tidak ditemukan'], 404);
+        }
+
+        $comment->increment('likes_count');
+
+        return response()->json([
+            'success' => true,
+            'likes_count' => $comment->fresh()->likes_count,
         ], 200, ['Access-Control-Allow-Origin' => '*']);
     }
 
@@ -479,6 +590,49 @@ class LandingPageApiController extends Controller
                 }),
             ];
         })->toArray();
+    }
+
+    /**
+     * Helper: Get formatted stories list (Newest first)
+     */
+    protected function getStoriesData(): array
+    {
+        return LandingStory::where('is_active', true)
+            ->with(['comments' => function ($q) {
+                $q->where('is_approved', true)->orderBy('id', 'desc');
+            }])
+            ->orderBy('id', 'desc')
+            ->get()
+            ->map(function ($s) {
+                return [
+                    'id' => $s->id,
+                    'title' => $s->title,
+                    'subtitle' => $s->subtitle ?: 'Depo Srengseng Sawah • Jagakarsa',
+                    'tag' => $s->tag ?: 'Cerita Depo',
+                    'image_path' => $s->image_path,
+                    'image_url' => $s->image_url,
+                    'caption' => $s->caption,
+                    'likes_count' => (int) $s->likes_count,
+                    'comments_count' => $s->comments->count(),
+                    'created_at' => $s->created_at ? $s->created_at->toISOString() : null,
+                    'created_at_human' => $s->created_at ? $s->created_at->diffForHumans() : 'Baru saja',
+                    'comments' => $s->comments->map(function ($c) {
+                        return [
+                            'id' => $c->id,
+                            'story_id' => $c->story_id,
+                            'user_name' => $c->user_name,
+                            'comment' => $c->comment,
+                            'original_comment' => $c->original_comment,
+                            'detected_language' => $c->detected_language,
+                            'is_translated' => (bool) $c->is_translated,
+                            'likes_count' => (int) $c->likes_count,
+                            'created_at' => $c->created_at ? $c->created_at->diffForHumans() : 'Baru saja',
+                        ];
+                    })->values()->toArray(),
+                ];
+            })
+            ->values()
+            ->toArray();
     }
 
     /**

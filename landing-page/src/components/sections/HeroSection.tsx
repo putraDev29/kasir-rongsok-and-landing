@@ -4,15 +4,17 @@ import React from "react";
 import { motion } from "framer-motion";
 import { MessageCircle, ArrowRight, ShieldCheck, Scale, Truck, MapPin, ChevronDown } from "lucide-react";
 import Image from "next/image";
-import { HeroData, LandingSettings, StatisticItem } from "@/types/landing-page";
+import { HeroData, LandingSettings, StatisticItem, StoryItem } from "@/types/landing-page";
+import { HeroStoryViewer } from "@/components/story/HeroStoryViewer";
 
 interface HeroSectionProps {
   hero: HeroData;
   settings: LandingSettings;
   statistics: StatisticItem[];
+  stories?: StoryItem[];
 }
 
-export default function HeroSection({ hero, settings }: HeroSectionProps) {
+export default function HeroSection({ hero, settings, stories }: HeroSectionProps) {
   const handleScrollToCategories = (e: React.MouseEvent) => {
     e.preventDefault();
     const el = document.querySelector("#categories");
@@ -104,46 +106,15 @@ export default function HeroSection({ hero, settings }: HeroSectionProps) {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="flex-1 min-h-0 w-full flex flex-col md:grid md:grid-cols-12 gap-2 sm:gap-3.5"
         >
-          {/* Main Hero Photo (Fills dynamically on mobile, 7 cols on desktop) */}
-          <div className="md:col-span-7 flex-1 min-h-0 md:h-full relative rounded-2xl md:rounded-3xl overflow-hidden shadow-md border border-sky-100 group">
-            <Image
-              src={mainImage}
-              alt={mainTitle}
-              fill
-              priority
-              unoptimized={mainImage.startsWith("http://localhost") || mainImage.startsWith("http://127.0.0.1")}
-              className="object-cover group-hover:scale-105 transition-transform duration-700"
-              sizes="(max-width: 768px) 100vw, 60vw"
+          {/* Main Hero Photo: Interactive Story Reel (Unlimited photos, latest first, likes & auto-translated comments) */}
+          <div className="md:col-span-7 flex-1 min-h-[360px] sm:min-h-[420px] md:h-full relative">
+            <HeroStoryViewer
+              initialStories={stories}
+              settings={settings}
+              fallbackImage={mainImage}
+              fallbackTitle={mainTitle}
+              fallbackSubtitle={mainSubtitle}
             />
-            {/* Visual overlay gradient */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent" />
-
-            {/* Floating Top Badge */}
-            <div className="absolute top-2.5 left-2.5 sm:top-4 sm:left-4 flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-full bg-white/95 text-sky-900 text-[10px] sm:text-[11px] font-bold shadow-md backdrop-blur-md border border-sky-200 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 animate-ping" />
-                Operasional 24 Jam
-              </span>
-            </div>
-
-            {/* Bottom Caption on Photo */}
-            <div className="absolute bottom-2.5 left-2.5 right-2.5 sm:bottom-4 sm:left-4 sm:right-4 flex items-end justify-between">
-              <div className="text-white space-y-0.5">
-                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-sky-300">{mainSubtitle}</span>
-                <h3 className="text-xs sm:text-base font-bold text-white leading-snug">{mainTitle}</h3>
-                <p className="text-[11px] text-slate-200 hidden sm:block line-clamp-1">Fasilitas timbangan digital akurat di Jakarta Selatan, siap tampung partai kecil & besar.</p>
-              </div>
-
-              <a
-                href={settings.whatsapp_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shrink-0 p-1.5 sm:p-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white shadow-lg transition-transform hover:scale-110 ml-2"
-                title="Hubungi Admin WhatsApp"
-              >
-                <ArrowRight className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
-              </a>
-            </div>
           </div>
 
           {/* Secondary Visual Cards (5 Columns on desktop, 3 columns on mobile) */}

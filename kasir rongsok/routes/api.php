@@ -15,6 +15,10 @@ Route::prefix('landing-page')->group(function () {
     Route::get('/services', [LandingPageApiController::class, 'services'])->name('api.landing-page.services');
     Route::get('/categories', [LandingPageApiController::class, 'categories'])->name('api.landing-page.categories');
     Route::get('/gallery', [LandingPageApiController::class, 'gallery'])->name('api.landing-page.gallery');
+    Route::get('/stories', [LandingPageApiController::class, 'stories'])->name('api.landing-page.stories');
+    Route::post('/stories/{id}/comments', [LandingPageApiController::class, 'storeStoryComment'])->name('api.landing-page.stories.comment');
+    Route::post('/stories/{id}/like', [LandingPageApiController::class, 'likeStory'])->name('api.landing-page.stories.like');
+    Route::post('/stories/comments/{id}/like', [LandingPageApiController::class, 'likeStoryComment'])->name('api.landing-page.stories.comment.like');
     Route::get('/testimonials', [LandingPageApiController::class, 'testimonials'])->name('api.landing-page.testimonials');
     Route::post('/testimonials', [LandingPageApiController::class, 'submitTestimonial'])->name('api.landing-page.testimonials.submit');
     Route::get('/faqs', [LandingPageApiController::class, 'faqs'])->name('api.landing-page.faqs');

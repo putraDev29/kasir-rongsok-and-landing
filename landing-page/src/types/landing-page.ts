@@ -167,6 +167,33 @@ export interface SeoData {
   og_image: string;
 }
 
+export interface StoryComment {
+  id: number;
+  story_id: number;
+  user_name: string;
+  comment: string;
+  original_comment?: string;
+  detected_language?: string;
+  is_translated: boolean;
+  likes_count: number;
+  created_at: string;
+}
+
+export interface StoryItem {
+  id: number;
+  title: string;
+  subtitle?: string;
+  tag?: string;
+  image_path: string;
+  image_url: string;
+  caption?: string;
+  likes_count: number;
+  comments_count: number;
+  created_at?: string;
+  created_at_human?: string;
+  comments: StoryComment[];
+}
+
 export interface LandingPageData {
   settings: LandingSettings;
   hero: HeroData;
@@ -176,6 +203,7 @@ export interface LandingPageData {
   why_choose_us: WhyChooseUsItem[];
   process: ProcessStep[];
   gallery: GalleryItem[];
+  stories?: StoryItem[];
   statistics: StatisticItem[];
   location: LocationData;
   testimonials: TestimonialItem[];

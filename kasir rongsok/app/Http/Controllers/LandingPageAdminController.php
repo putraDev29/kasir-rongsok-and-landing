@@ -8,6 +8,8 @@ use App\Models\LandingGallery;
 use App\Models\LandingInquiry;
 use App\Models\LandingService;
 use App\Models\LandingStatistic;
+use App\Models\LandingStory;
+use App\Models\LandingStoryComment;
 use App\Models\LandingTestimonial;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,6 +26,12 @@ class LandingPageAdminController extends Controller
         $settings = BusinessSetting::pluck('value', 'key')->all();
         $services = LandingService::orderBy('order')->get();
         $galleries = LandingGallery::orderBy('order')->get();
+        $stories = LandingStory::withCount('comments')
+            ->with(['comments' => function ($q) {
+                $q->orderBy('id', 'desc');
+            }])
+            ->orderBy('id', 'desc')
+            ->get();
         $testimonials = LandingTestimonial::orderBy('order')->get();
         $faqs = LandingFaq::orderBy('order')->get();
         $statistics = LandingStatistic::orderBy('order')->get();
@@ -33,6 +41,7 @@ class LandingPageAdminController extends Controller
             'settings',
             'services',
             'galleries',
+            'stories',
             'testimonials',
             'faqs',
             'statistics',
@@ -268,6 +277,77 @@ class LandingPageAdminController extends Controller
 
         return redirect()->route('landing-admin.index', ['tab' => 'gallery'])
             ->with('success', 'Foto galeri berhasil dihapus.');
+    }
+
+    /**
+     * Store Story Photo (File Upload or URL)
+     */
+    public function storeStory(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'title' => 'required|string|max:150',
+            'subtitle' => 'nullable|string|max:150',
+            'tag' => 'nullable|string|max:80',
+            'caption' => 'nullable|string|max:500',
+            'image_file' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'image_url' => 'nullable|url|max:500',
+        ]);
+
+        $imagePath = $request->input('image_url');
+
+        if ($request->hasFile('image_file')) {
+            $file = $request->file('image_file');
+            $dir = public_path('uploads/stories');
+            if (!file_exists($dir)) {
+                mkdir($dir, 0755, true);
+            }
+            $filename = 'story_' . time() . '_' . Str::random(5) . '.' . $file->getClientOriginalExtension();
+            $file->move($dir, $filename);
+            $imagePath = 'uploads/stories/' . $filename;
+        }
+
+        if (empty($imagePath)) {
+            return back()->with('error', 'Silakan upload file foto atau masukkan tautan URL gambar untuk story.');
+        }
+
+        LandingStory::create([
+            'title' => $request->input('title'),
+            'subtitle' => $request->input('subtitle', 'PT. Seberaya Akses Multi'),
+            'tag' => $request->input('tag', 'Cerita Depo'),
+            'image_path' => $imagePath,
+            'caption' => $request->input('caption'),
+            'likes_count' => 0,
+            'order' => 0,
+            'is_active' => true,
+        ]);
+
+        return redirect()->route('landing-admin.index', ['tab' => 'stories'])
+            ->with('success', 'Foto story baru berhasil ditambahkan! Foto ini langsung menjadi yang terdepan.');
+    }
+
+    /**
+     * Delete Story Photo
+     */
+    public function destroyStory(LandingStory $story): RedirectResponse
+    {
+        if (!str_starts_with($story->image_path, 'http') && file_exists(public_path($story->image_path))) {
+            @unlink(public_path($story->image_path));
+        }
+        $story->delete();
+
+        return redirect()->route('landing-admin.index', ['tab' => 'stories'])
+            ->with('success', 'Foto story berhasil dihapus.');
+    }
+
+    /**
+     * Delete Story Comment
+     */
+    public function destroyStoryComment(LandingStoryComment $comment): RedirectResponse
+    {
+        $comment->delete();
+
+        return redirect()->route('landing-admin.index', ['tab' => 'stories'])
+            ->with('success', 'Komentar story berhasil dihapus.');
     }
 
     /**

@@ -163,6 +163,11 @@
             <span>Hero & Tentang Kami</span>
         </button>
 
+        <button type="button" @click="activeTab = 'stories'; history.replaceState(null, '', '?tab=stories')" :class="activeTab === 'stories' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
+            <i data-lucide="play-circle" class="w-4 h-4 text-amber-300"></i>
+            <span>Hero Story Reel ({{ $stories->count() }})</span>
+        </button>
+
         <button type="button" @click="activeTab = 'services'; history.replaceState(null, '', '?tab=services')" :class="activeTab === 'services' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'" class="px-3.5 py-2 rounded-xl transition flex items-center gap-2">
             <i data-lucide="briefcase" class="w-4 h-4"></i>
             <span>Layanan ({{ $services->count() }})</span>
@@ -467,6 +472,26 @@
                 </div>
             </div>
 
+            <!-- Story Reel Announcement Banner -->
+            <div class="p-4 bg-gradient-to-r from-amber-50 to-emerald-50 border border-amber-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <i data-lucide="play-circle" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                            <span>Ingin Mengunggah Banyak Foto Story Tanpa Batas?</span>
+                            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500 text-white">BARU</span>
+                        </span>
+                        <span class="text-[11px] text-slate-600">Foto utama hero kini mendukung Story tak terbatas dengan fitur Like, Komentar Otomatis Bahasa Indonesia, dan Tanya WhatsApp di Tab <strong>Hero Story Reel</strong>.</span>
+                    </div>
+                </div>
+                <button type="button" @click="activeTab = 'stories'; history.replaceState(null, '', '?tab=stories')" class="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg transition shrink-0 flex items-center gap-1.5 shadow-sm">
+                    <span>Kelola Story Hero ({{ $stories->count() }})</span>
+                    <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+
             <!-- Hero Visual Showcase Images (Bento Grid) -->
             <div class="bg-slate-50 p-6 sm:p-7 rounded-2xl border border-slate-200 space-y-6">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-4">
@@ -496,20 +521,20 @@
                         </span>
                     </div>
 
-                    <div class="hero-main-layout">
+                    <div class="hero-main-layout" style="display: flex; flex-wrap: wrap; gap: 1.5rem; width: 100%;">
                         <!-- Preview Kiri -->
-                        <div class="space-y-2">
+                        <div class="space-y-2" style="flex: 1 1 320px; min-width: 260px; max-width: 100%;">
                             <label class="block text-xs font-semibold text-slate-700 uppercase">Pratinjau Foto Utama Saat Ini</label>
-                            <div class="hero-preview-box-main shadow-inner">
+                            <div class="hero-preview-box-main shadow-inner" style="width: 100%; height: 220px; border-radius: 0.75rem; overflow: hidden; background: #0f172a; border: 1px solid #cbd5e1;">
                                 <img id="preview-hero-main"
                                      src="{{ !empty($settings['landing_hero_main_image']) ? (str_starts_with($settings['landing_hero_main_image'], 'http') ? $settings['landing_hero_main_image'] : asset($settings['landing_hero_main_image'])) : 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=1200&auto=format&fit=crop' }}"
-                                     alt="Foto Utama Depo">
+                                     alt="Foto Utama Depo" style="width: 100%; height: 100%; object-fit: cover;">
                             </div>
                             <span class="text-[11px] text-slate-400 block">Rekomendasi rasio foto horizontal (landscape / 16:9).</span>
                         </div>
 
                         <!-- Input Kanan -->
-                        <div class="space-y-3.5">
+                        <div class="space-y-3.5" style="flex: 2 1 360px; min-width: 260px;">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Unggah File Foto Baru</label>
                                 <input type="file" name="landing_hero_main_image_file" accept="image/*"
@@ -549,7 +574,7 @@
                         <span>3 Foto Cuplikan Pendamping (Slot 1, 2, 3)</span>
                     </h5>
 
-                    <div class="hero-sub-grid">
+                    <div class="hero-sub-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.25rem; width: 100%;">
                         <!-- Cuplikan 1 -->
                         <div class="hero-sub-card">
                             <div class="flex items-center justify-between border-b border-slate-100 pb-2">
@@ -734,6 +759,220 @@
         </form>
     </div>
 
+    <!-- TAB: HERO STORY REEL -->
+    <div x-show="activeTab === 'stories'" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+        <!-- Feature Highlights Info Banner -->
+        <div class="p-5 bg-gradient-to-r from-slate-900 to-emerald-950 rounded-2xl border border-slate-800 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-start sm:items-center gap-3.5">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-500 text-white flex items-center justify-center shrink-0 shadow-lg">
+                    <i data-lucide="play-circle" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+                        <span>Hero Story Reel Interaktif (Live Stories)</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-400 text-slate-950 uppercase tracking-wider">Fitur Unggulan</span>
+                    </h3>
+                    <p class="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                        Foto-foto ini tampil sebagai <strong>Story Interaktif</strong> di slot foto utama Hero landing page. Foto terakhir yang Anda unggah otomatis menjadi yang <strong>terdepan (#1)</strong>. Pengunjung dapat menyukai (like), berkomentar per-foto (otomatis diterjemahkan ke Bahasa Indonesia), dan mengirim pertanyaan langsung ke WhatsApp.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Modal Trigger: Upload Story Baru -->
+            <div x-data="{ openStoryModal: false }" class="shrink-0">
+                <button type="button" @click="openStoryModal = true" class="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black rounded-xl transition flex items-center gap-2 shadow-lg">
+                    <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                    <span>+ Upload Foto Story Baru</span>
+                </button>
+
+                <!-- Upload Modal -->
+                <div x-show="openStoryModal" class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs" style="display: none;">
+                    <div @click.away="openStoryModal = false" class="bg-white rounded-2xl max-w-xl w-full p-6 sm:p-7 space-y-5 shadow-2xl text-slate-800">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                                    <i data-lucide="image" class="w-4 h-4"></i>
+                                </span>
+                                <div>
+                                    <h4 class="font-bold text-sm text-slate-900">Upload Foto Story Hero Baru</h4>
+                                    <p class="text-[11px] text-slate-500">Foto baru akan otomatis berada di urutan pertama (paling depan)</p>
+                                </div>
+                            </div>
+                            <button type="button" @click="openStoryModal = false" class="text-slate-400 hover:text-slate-600 p-1">
+                                <i data-lucide="x" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+
+                        <form action="{{ route('landing-admin.stories.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                            @csrf
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Judul Story / Aktivitas *</label>
+                                <input type="text" name="title" required placeholder="Contoh: Bongkaran Konstruksi Besi WF & H-Beam" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500">
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Subjudul / Lokasi</label>
+                                    <input type="text" name="subtitle" placeholder="Depo Srengseng Sawah • Jagakarsa" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Tag Kategori Badge</label>
+                                    <input type="text" name="tag" placeholder="Bongkaran Pabrik / Tembaga Super" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Pilih File Foto (JPG, PNG, WEBP maks 5MB)</label>
+                                <input type="file" name="image_file" accept="image/*" class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 border border-slate-300 rounded-xl p-1.5 bg-slate-50 cursor-pointer">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Atau Gunakan Tautan URL Gambar Online</label>
+                                <input type="url" name="image_url" placeholder="https://images.unsplash.com/photo-..." class="w-full p-2.5 text-xs border border-slate-300 rounded-xl">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Keterangan / Caption Singkat</label>
+                                <textarea name="caption" rows="2" placeholder="Catatan atau informasi tambahan seputar aktivitas di foto ini..." class="w-full p-2.5 text-xs border border-slate-300 rounded-xl"></textarea>
+                            </div>
+
+                            <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                                <button type="button" @click="openStoryModal = false" class="px-4 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50">Batal</button>
+                                <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-sm">Simpan & Terbitkan Story</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Daftar Story (Urutan Descending - Newest at Top) -->
+        <div class="space-y-4">
+            <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Daftar Story Aktif ({{ $stories->count() }} Foto — Terakhir Upload Paling Depan)</span>
+                </h4>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                @forelse($stories as $index => $story)
+                    <div class="bg-white border rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition flex flex-col justify-between {{ $index === 0 ? 'border-emerald-400 ring-2 ring-emerald-500/20' : 'border-slate-200' }}">
+                        <div>
+                            <!-- Header Foto with Badges -->
+                            <div class="relative h-48 w-full bg-slate-900 overflow-hidden">
+                                <img src="{{ $story->image_url }}" alt="{{ $story->title }}" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-black/30"></div>
+                                
+                                <div class="absolute top-3 left-3 flex items-center gap-2">
+                                    @if($index === 0)
+                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-500 text-slate-950 uppercase tracking-wider shadow-sm flex items-center gap-1">
+                                            <i data-lucide="star" class="w-3 h-3 fill-slate-950"></i> #1 Slide Terdepan
+                                        </span>
+                                    @else
+                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-900/80 text-white backdrop-blur-sm border border-white/20">
+                                            Slide #{{ $index + 1 }}
+                                        </span>
+                                    @endif
+
+                                    @if($story->tag)
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/90 text-slate-800 backdrop-blur-sm">
+                                            {{ $story->tag }}
+                                        </span>
+                                    @endif
+                                </div>
+
+                                <div class="absolute top-3 right-3 flex items-center gap-1.5">
+                                    <form action="{{ route('landing-admin.stories.destroy', $story->id) }}" method="POST" onsubmit="return confirm('Hapus foto story ini beserta seluruh komentarnya?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="p-1.5 rounded-lg bg-rose-600/90 hover:bg-rose-600 text-white text-xs shadow-sm transition" title="Hapus Story">
+                                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <div class="absolute bottom-3 left-3 right-3 text-white">
+                                    <span class="text-[10px] text-amber-300 font-semibold block">{{ $story->subtitle }}</span>
+                                    <h5 class="text-xs sm:text-sm font-bold leading-snug truncate">{{ $story->title }}</h5>
+                                </div>
+                            </div>
+
+                            <!-- Content Info -->
+                            <div class="p-4 space-y-3">
+                                @if($story->caption)
+                                    <p class="text-xs text-slate-600 line-clamp-2">{{ $story->caption }}</p>
+                                @endif
+
+                                <div class="flex items-center justify-between text-xs pt-1 border-t border-slate-100 text-slate-500">
+                                    <div class="flex items-center gap-3">
+                                        <span class="flex items-center gap-1 font-semibold text-rose-500">
+                                            <i data-lucide="heart" class="w-3.5 h-3.5 fill-rose-500"></i> {{ $story->likes_count }} Suka
+                                        </span>
+                                        <span class="flex items-center gap-1 font-semibold text-sky-600">
+                                            <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> {{ $story->comments_count }} Komentar
+                                        </span>
+                                    </div>
+                                    <span class="text-[11px] text-slate-400">{{ $story->created_at ? $story->created_at->diffForHumans() : '' }}</span>
+                                </div>
+
+                                <!-- Comments Accordion / Dropdown -->
+                                <div x-data="{ showComments: false }" class="pt-1">
+                                    <button type="button" @click="showComments = !showComments" class="w-full py-1.5 px-3 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg flex items-center justify-between transition border border-slate-200">
+                                        <span class="flex items-center gap-1.5">
+                                            <i data-lucide="messages-square" class="w-3.5 h-3.5 text-slate-500"></i>
+                                            <span>Lihat Komentar ({{ $story->comments->count() }})</span>
+                                        </span>
+                                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform" :class="showComments ? 'rotate-180' : ''"></i>
+                                    </button>
+
+                                    <div x-show="showComments" class="mt-2.5 space-y-2 max-h-56 overflow-y-auto pr-1" style="display: none;">
+                                        @forelse($story->comments as $cmt)
+                                            <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs space-y-1">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="font-bold text-slate-800">{{ $cmt->user_name }}</span>
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="text-[10px] text-slate-400">{{ $cmt->created_at ? $cmt->created_at->diffForHumans() : '' }}</span>
+                                                        <form action="{{ route('landing-admin.stories.comments.destroy', $cmt->id) }}" method="POST" onsubmit="return confirm('Hapus komentar ini?')">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="text-rose-500 hover:text-rose-700" title="Hapus Komentar">
+                                                                <i data-lucide="x" class="w-3 h-3"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Komentar Bahasa Indonesia -->
+                                                <p class="text-slate-700 font-medium">{{ $cmt->comment }}</p>
+
+                                                <!-- Info Terjemahan Otomatis jika bahasa asing -->
+                                                @if($cmt->is_translated && $cmt->original_comment)
+                                                    <div class="pt-1 text-[10px] text-emerald-700 bg-emerald-50 px-2 py-1 rounded flex items-center gap-1.5 border border-emerald-100">
+                                                        <i data-lucide="languages" class="w-3 h-3 shrink-0"></i>
+                                                        <span class="truncate">Diterjemahkan dari ({{ strtoupper($cmt->detected_language ?: 'ASING') }}): "<em>{{ $cmt->original_comment }}</em>"</span>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @empty
+                                            <p class="text-[11px] text-slate-400 text-center py-2 italic">Belum ada komentar pada foto story ini.</p>
+                                        @endforelse
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="col-span-full py-12 text-center text-slate-400">
+                        <i data-lucide="image-off" class="w-10 h-10 mx-auto text-slate-300 mb-2"></i>
+                        <p class="text-sm font-semibold">Belum ada foto story yang diunggah</p>
+                        <p class="text-xs text-slate-400 mt-1">Klik tombol "+ Upload Foto Story Baru" di atas untuk menambahkan foto pertama.</p>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+    </div>
+
     <!-- TAB 3: LAYANAN (SERVICES) -->
     <div x-show="activeTab === 'services'" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
@@ -832,16 +1071,16 @@
         <!-- Quick Switch Tip Banner -->
         <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <i data-lucide="play-circle" class="w-4 h-4"></i>
                 </div>
                 <div>
-                    <span class="text-xs font-bold text-emerald-950 block">Mencari Foto Hero Halaman Utama Website?</span>
-                    <span class="text-[11px] text-emerald-700">4 Foto showcase bento hero diatur secara khusus di tab Hero & Tentang Kami.</span>
+                    <span class="text-xs font-bold text-emerald-950 block">Mencari Foto Story Hero Halaman Utama?</span>
+                    <span class="text-[11px] text-emerald-700">Foto Story tak terbatas dengan Like, Komentar Otomatis Bahasa Indonesia, dan Tanya WhatsApp diatur di tab Hero Story Reel.</span>
                 </div>
             </div>
-            <button type="button" @click="activeTab = 'hero-about'; history.replaceState(null, '', '?tab=hero-about')" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition shrink-0 flex items-center gap-1.5 shadow-sm">
-                <span>Buka Pengaturan Foto Hero</span>
+            <button type="button" @click="activeTab = 'stories'; history.replaceState(null, '', '?tab=stories')" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition shrink-0 flex items-center gap-1.5 shadow-sm">
+                <span>Buka Hero Story Reel</span>
                 <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
             </button>
         </div>
