@@ -367,3 +367,4 @@ class CloudSyncService
         return $files;
     }
 }
+
