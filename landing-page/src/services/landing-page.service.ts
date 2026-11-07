@@ -34,7 +34,7 @@ export const FALLBACK_LANDING_DATA: LandingPageData = {
     about_description: "PT. Seberaya Akses Multi (Seberaya Logam) adalah perusahaan pengelolaan limbah logam, rongsokan, dan jasa bongkaran terpercaya yang berlokasi di Jagakarsa, Jakarta Selatan. Kami melayani jual beli besi tua, scrap logam presisi (tembaga, kuningan, aluminium, timah, nikel, karbait/carbide), penerimaan bongkaran bangunan ruko/gedung/rumah, serta jual beli aneka tabung gas dengan standar penimbangan digital bersertifikasi dan pelunasan tunai/transfer langsung di tempat.",
     about_vision: "Menjadi perusahaan pengelolaan scrap logam, perdagangan tabung gas, dan jasa bongkaran bangunan terdepan di Jakarta Selatan dan Jabodetabek yang terpercaya, transparan, dan ramah lingkungan.",
     about_mission: "1. Transparansi timbangan digital presisi dan penawaran harga beli scrap tertinggi setiap hari.\n2. Layanan cepat dan tuntas untuk penerimaan bongkaran bangunan serta jual beli tabung gas.\n3. Menyediakan armada penjemputan 24 jam untuk skala bengkel, pabrik, toko, gudang, maupun rumah tangga.",
-    about_years_experience: "10+",
+    about_years_experience: "3+",
     social_facebook: "https://facebook.com",
     social_instagram: "https://instagram.com",
     social_tiktok: "https://tiktok.com",
@@ -56,8 +56,8 @@ export const FALLBACK_LANDING_DATA: LandingPageData = {
     description: "PT. Seberaya Akses Multi (Seberaya Logam) adalah perusahaan pengelolaan limbah logam, rongsokan, dan jasa bongkaran terpercaya yang berlokasi di Jagakarsa, Jakarta Selatan. Kami melayani jual beli besi tua, scrap logam presisi (tembaga, kuningan, aluminium, timah, nikel, karbait/carbide), penerimaan bongkaran bangunan ruko/gedung/rumah, serta jual beli aneka tabung gas dengan standar penimbangan digital bersertifikasi dan pelunasan tunai/transfer langsung di tempat.",
     vision: "Menjadi perusahaan pengelolaan scrap logam, perdagangan tabung gas, dan jasa bongkaran bangunan terdepan di Jakarta Selatan dan Jabodetabek yang terpercaya, transparan, dan ramah lingkungan.",
     mission: "1. Transparansi timbangan digital presisi dan penawaran harga beli scrap tertinggi setiap hari.\n2. Layanan cepat dan tuntas untuk penerimaan bongkaran bangunan serta jual beli tabung gas.\n3. Menyediakan armada penjemputan 24 jam untuk skala bengkel, pabrik, toko, gudang, maupun rumah tangga.",
-    years_experience: "10+",
-    image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=1200&auto=format&fit=crop",
+    years_experience: "3+",
+    image: "/images/about_depo_seberaya.jpg",
   },
   services: [
     {
@@ -218,8 +218,8 @@ export const FALLBACK_LANDING_DATA: LandingPageData = {
     },
     {
       icon: "ShieldCheck",
-      title: "Legalitas & Pengalaman 12+ Tahun",
-      description: "Pengalaman panjang mengelola limbah daur ulang secara profesional, berlisensi, dan ramah kelestarian lingkungan.",
+      title: "Legalitas & Pengalaman 3+ Tahun",
+      description: "Pengalaman mengelola limbah daur ulang secara profesional, berlisensi, dan ramah kelestarian lingkungan.",
     },
   ],
   process: [
@@ -311,7 +311,7 @@ export const FALLBACK_LANDING_DATA: LandingPageData = {
     },
   ],
   statistics: [
-    { id: 1, label: "Tahun Pengalaman", value: "12", suffix: "+", icon: "Clock", order: 1 },
+    { id: 1, label: "Tahun Pengalaman", value: "3", suffix: "+", icon: "Clock", order: 1 },
     { id: 2, label: "Ton Daur Ulang / Bulan", value: "5000", suffix: "+", icon: "Recycle", order: 2 },
     { id: 3, label: "Mitra & Pelanggan Aktif", value: "3500", suffix: "+", icon: "Users", order: 3 },
     { id: 4, label: "Akurasi Timbangan Digital", value: "100", suffix: "%", icon: "Scale", order: 4 },

@@ -184,6 +184,21 @@ class LandingPageAdminController extends Controller
             }
         }
 
+        // Process About Section Image Upload or Direct URL
+        $aboutDestination = public_path('uploads/about');
+        if (!file_exists($aboutDestination)) {
+            @mkdir($aboutDestination, 0775, true);
+        }
+        if ($request->hasFile('landing_about_image_file')) {
+            $file = $request->file('landing_about_image_file');
+            $ext = $file->getClientOriginalExtension() ?: 'jpg';
+            $filename = 'about_depo_' . time() . '.' . $ext;
+            $file->move($aboutDestination, $filename);
+            BusinessSetting::set('landing_about_image', 'uploads/about/' . $filename, 'landing_page');
+        } elseif ($request->filled('landing_about_image')) {
+            BusinessSetting::set('landing_about_image', $request->input('landing_about_image'), 'landing_page');
+        }
+
         return redirect()->route('landing-admin.index', ['tab' => 'hero-about'])
             ->with('success', 'Konten Hero, Foto Showcase, dan Profil Tentang Kami berhasil diperbarui.');
     }

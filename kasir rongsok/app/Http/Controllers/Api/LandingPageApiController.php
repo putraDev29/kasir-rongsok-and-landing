@@ -72,8 +72,8 @@ class LandingPageApiController extends Controller
             ],
             [
                 'icon' => 'ShieldCheck',
-                'title' => 'Legalitas & Pengalaman 12+ Tahun',
-                'description' => 'Pengalaman panjang mengelola limbah daur ulang secara profesional, berlisensi, dan ramah kelestarian lingkungan.',
+                'title' => 'Legalitas & Pengalaman 3+ Tahun',
+                'description' => 'Pengalaman mengelola limbah daur ulang secara profesional, berlisensi, dan ramah kelestarian lingkungan.',
             ],
         ];
 
@@ -156,7 +156,10 @@ class LandingPageApiController extends Controller
                     'vision' => $settings['about_vision'],
                     'mission' => $settings['about_mission'],
                     'years_experience' => $settings['about_years_experience'],
-                    'image' => 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=1200&auto=format&fit=crop',
+                    'image' => $this->formatImageUrl(
+                        BusinessSetting::get('landing_about_image'),
+                        asset('uploads/about/about_depo_seberaya.jpg')
+                    ),
                 ],
                 'services' => $services,
                 'categories' => $categories,
@@ -528,10 +531,14 @@ class LandingPageApiController extends Controller
 
             // About
             'about_title' => BusinessSetting::get('landing_about_title', 'Komitmen Menjaga Lingkungan dengan Nilai Ekonomi Maksimal'),
-            'about_description' => BusinessSetting::get('landing_about_description', 'UD. Berkah Rongsok Makmur adalah perusahaan pengelolaan dan pengepul material daur ulang terintegrasi yang telah beroperasi selama lebih dari 12 tahun.'),
+            'about_description' => BusinessSetting::get('landing_about_description', 'PT. Seberaya Akses Multi adalah perusahaan pengelolaan dan pengepul material daur ulang terintegrasi yang telah beroperasi selama lebih dari 3 tahun.'),
             'about_vision' => BusinessSetting::get('landing_about_vision', 'Menjadi rantai pasok material daur ulang terdepan, modern, dan paling terpercaya di Indonesia.'),
             'about_mission' => BusinessSetting::get('landing_about_mission', "1. Transparansi timbangan digital presisi.\n2. Layanan penjemputan armada cepat dan profesional.\n3. Membangun ekosistem sirkular ekonomi berkelanjutan."),
-            'about_years_experience' => BusinessSetting::get('landing_about_years_experience', '12+'),
+            'about_years_experience' => BusinessSetting::get('landing_about_years_experience', '3+'),
+            'about_image' => $this->formatImageUrl(
+                BusinessSetting::get('landing_about_image'),
+                asset('uploads/about/about_depo_seberaya.jpg')
+            ),
 
             // Socials
             'social_facebook' => BusinessSetting::get('landing_social_facebook', ''),

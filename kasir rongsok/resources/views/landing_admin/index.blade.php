@@ -714,11 +714,49 @@
             </div>
 
             <!-- About Settings -->
-            <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
-                <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-2">
-                    <i data-lucide="info" class="w-4 h-4"></i>
-                    <span>Section Tentang Kami (About Us)</span>
-                </h4>
+            <div class="bg-slate-50 p-5 sm:p-6 rounded-xl border border-slate-200 space-y-5">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-2">
+                        <i data-lucide="info" class="w-4 h-4"></i>
+                        <span>Section Tentang Kami (Halaman Kedua)</span>
+                    </h4>
+                    <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                        Foto & Profil Depo
+                    </span>
+                </div>
+
+                <!-- Foto Depo Tentang Kami (Halaman Kedua) -->
+                <div class="p-4 bg-white rounded-xl border border-slate-200 space-y-3">
+                    <label class="block text-xs font-bold text-slate-800 uppercase">
+                        Foto Depo / Operasional (Halaman Kedua)
+                    </label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: start; width: 100%;">
+                        <div style="flex: 1 1 280px; min-width: 240px; max-width: 360px;">
+                            <div class="rounded-xl overflow-hidden border border-slate-200 bg-slate-900 shadow-sm" style="height: 200px;">
+                                <img id="preview-about-image"
+                                     src="{{ !empty($settings['landing_about_image']) ? (str_starts_with($settings['landing_about_image'], 'http') ? $settings['landing_about_image'] : asset($settings['landing_about_image'])) : asset('uploads/about/about_depo_seberaya.jpg') }}"
+                                     alt="Foto Depo Tentang Kami"
+                                     style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+                            <span class="text-[10px] text-slate-400 mt-1 block">Foto ini tampil besar di halaman kedua (Tentang Usaha Kami) dengan badge tahun pengalaman.</span>
+                        </div>
+                        <div style="flex: 2 1 320px; min-width: 260px;" class="space-y-3">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Unggah Foto Baru (JPG, PNG, WEBP)</label>
+                                <input type="file" name="landing_about_image_file" accept="image/*"
+                                       onchange="previewHeroImage(this, 'preview-about-image')"
+                                       class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 border border-slate-300 rounded-lg p-1 bg-slate-50 cursor-pointer">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Atau Gunakan Tautan URL Gambar Online</label>
+                                <input type="text" name="landing_about_image"
+                                       oninput="previewHeroUrl(this.value, 'preview-about-image')"
+                                       value="{{ old('landing_about_image', $settings['landing_about_image'] ?? 'uploads/about/about_depo_seberaya.jpg') }}"
+                                       placeholder="https://..." class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 bg-white">
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="md:col-span-2">
@@ -729,7 +767,7 @@
 
                     <div class="md:col-span-2">
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Deskripsi Lengkap Usaha</label>
-                        <textarea name="landing_about_description" rows="4" class="w-full p-2.5 text-xs rounded-lg border border-slate-300 bg-white">{{ old('landing_about_description', $settings['landing_about_description'] ?? 'UD. Berkah Rongsok Makmur adalah perusahaan pengelolaan dan pengepul material daur ulang terintegrasi yang telah beroperasi selama lebih dari 12 tahun. Kami menjembatani industri manufaktur, perkantoran, bengkel, serta masyarakat dengan sistem timbangan digital bersertifikasi dan pembayaran kontan langsung di tempat.') }}</textarea>
+                        <textarea name="landing_about_description" rows="4" class="w-full p-2.5 text-xs rounded-lg border border-slate-300 bg-white">{{ old('landing_about_description', $settings['landing_about_description'] ?? 'PT. Seberaya Akses Multi adalah perusahaan pengelolaan dan pengepul material daur ulang terintegrasi yang telah beroperasi selama lebih dari 3 tahun. Kami menjembatani industri manufaktur, perkantoran, bengkel, serta masyarakat dengan sistem timbangan digital bersertifikasi dan pembayaran kontan langsung di tempat.') }}</textarea>
                     </div>
 
                     <div>
@@ -744,8 +782,8 @@
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Tahun Pengalaman (Teks Badge)</label>
-                        <input type="text" name="landing_about_years_experience" value="{{ old('landing_about_years_experience', $settings['landing_about_years_experience'] ?? '12+') }}"
-                               placeholder="Contoh: 12+" class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 bg-white font-bold">
+                        <input type="text" name="landing_about_years_experience" value="{{ old('landing_about_years_experience', $settings['landing_about_years_experience'] ?? '3+') }}"
+                               placeholder="Contoh: 3+" class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 bg-white font-bold">
                     </div>
                 </div>
             </div>

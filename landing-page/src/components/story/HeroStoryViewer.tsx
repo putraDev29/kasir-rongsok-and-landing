@@ -30,6 +30,31 @@ interface HeroStoryViewerProps {
   fallbackSubtitle: string;
 }
 
+// Human-friendly Indonesian language names mapper
+const getLanguageName = (code?: string): string => {
+  if (!code) return "Bahasa Asing";
+  const map: Record<string, string> = {
+    en: "Bahasa Inggris",
+    jw: "Bahasa Jawa",
+    jv: "Bahasa Jawa",
+    su: "Bahasa Sunda",
+    zh: "Bahasa Mandarin",
+    "zh-cn": "Bahasa Mandarin",
+    "zh-tw": "Bahasa Mandarin",
+    ja: "Bahasa Jepang",
+    ko: "Bahasa Korea",
+    ar: "Bahasa Arab",
+    ms: "Bahasa Melayu",
+    es: "Bahasa Spanyol",
+    fr: "Bahasa Prancis",
+    de: "Bahasa Jerman",
+    ru: "Bahasa Rusia",
+    hi: "Bahasa Hindi",
+    id: "Bahasa Indonesia",
+  };
+  return map[code.toLowerCase()] || `Bahasa (${code.toUpperCase()})`;
+};
+
 export function HeroStoryViewer({
   initialStories = [],
   settings,
@@ -300,7 +325,13 @@ export function HeroStoryViewer({
 
       // If user selected "Kirim juga via WhatsApp", open WhatsApp in new tab
       if (sendToWhatsApp) {
-        const waMsg = `Komentar / Pertanyaan dari ${authorName}:\n"${rawComment}"`;
+        let waMsg = `Nama Pengirim: *${authorName}*\n\nPesan / Pertanyaan (Bahasa Indonesia):\n*"${newComment.comment}"*`;
+
+        if (newComment.is_translated && newComment.original_comment) {
+          const langName = getLanguageName(newComment.detected_language);
+          waMsg += `\n\n🌐 *Keterangan:* Pesan ini otomatis diterjemahkan dari ${langName} (Teks Asli: "${newComment.original_comment}")`;
+        }
+
         const waUrl = generateWhatsAppUrl(waMsg);
         window.open(waUrl, "_blank", "noopener,noreferrer");
       }
@@ -658,7 +689,7 @@ export function HeroStoryViewer({
                       <div className="ml-8 text-[10px] text-emerald-400/90 bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded flex items-center gap-1.5">
                         <Languages className="w-3 h-3 text-emerald-400 shrink-0" />
                         <span className="truncate">
-                          Diterjemahkan ke Bahasa Indonesia (Asli: &ldquo;{cmt.original_comment}&rdquo;)
+                          Diterjemahkan dari {getLanguageName(cmt.detected_language)} (Asli: &ldquo;{cmt.original_comment}&rdquo;)
                         </span>
                       </div>
                     )}

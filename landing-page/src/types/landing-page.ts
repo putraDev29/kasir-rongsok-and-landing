@@ -25,6 +25,7 @@ export interface LandingSettings {
   about_vision: string;
   about_mission: string;
   about_years_experience: string;
+  about_image?: string;
   social_facebook?: string;
   social_instagram?: string;
   social_tiktok?: string;

@@ -18,6 +18,11 @@ export default function AboutSection({ about, settings }: AboutSectionProps) {
     .map((line) => line.replace(/^[0-9]+\.\s*/, "").trim())
     .filter((line) => line.length > 0);
 
+  const aboutImage =
+    about.image ||
+    settings.about_image ||
+    "/images/about_depo_seberaya.jpg";
+
   return (
     <section id="about" className="py-20 relative bg-white border-t border-sky-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -32,9 +37,10 @@ export default function AboutSection({ about, settings }: AboutSectionProps) {
           >
             <div className="relative h-[380px] sm:h-[480px] rounded-3xl overflow-hidden border border-sky-100 shadow-xl bg-slate-100 group">
               <Image
-                src={about.image || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=1200&auto=format&fit=crop"}
-                alt="Operasional Depo Pengepul Rongsok"
+                src={aboutImage}
+                alt="Operasional Depo Pengepul Rongsok PT. Seberaya Akses Multi"
                 fill
+                unoptimized={aboutImage.startsWith("http://localhost") || aboutImage.startsWith("http://127.0.0.1")}
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="(max-width: 1024px) 100vw, 500px"
               />
@@ -47,7 +53,7 @@ export default function AboutSection({ about, settings }: AboutSectionProps) {
                 </div>
                 <div>
                   <div className="text-xl font-black text-slate-900 font-mono">
-                    {about.years_experience || settings.about_years_experience || "12+"} Tahun
+                    {about.years_experience || settings.about_years_experience || "3+"} Tahun
                   </div>
                   <p className="text-xs text-slate-600 font-medium">Pengalaman Pengelolaan & Daur Ulang Logam</p>
                 </div>
