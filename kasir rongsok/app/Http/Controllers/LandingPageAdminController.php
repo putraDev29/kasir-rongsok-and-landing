@@ -554,6 +554,5 @@ class LandingPageAdminController extends Controller
         return redirect()->route('landing-admin.index', ['tab' => 'cloud-sync'])
             ->with('error', $result['message']);
     }
-    }
 }
 
